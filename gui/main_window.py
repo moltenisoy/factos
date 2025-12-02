@@ -42,7 +42,7 @@ class ToggleSwitch(QWidget):
         super().__init__(parent)
         self.category_name = category_name
         self.is_on = manager.has_backup(category_name)
-        self.setFixedSize(60, 30)
+        self.setFixedSize(70, 35)
         self.setCursor(Qt.PointingHandCursor)
         
     def paintEvent(self, event):
@@ -51,17 +51,17 @@ class ToggleSwitch(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         
         if self.is_on:
-            brush = QBrush(QColor(0, 200, 0))
+            brush = QBrush(QColor(39, 174, 96))
         else:
-            brush = QBrush(QColor(200, 0, 0))
+            brush = QBrush(QColor(192, 57, 43))
         
         painter.setBrush(brush)
         painter.setPen(QPen(Qt.NoPen))
-        painter.drawRoundedRect(0, 0, 60, 30, 15, 15)
+        painter.drawRoundedRect(0, 0, 70, 35, 17, 17)
         
-        circle_x = 35 if self.is_on else 5
+        circle_x = 40 if self.is_on else 5
         painter.setBrush(QBrush(Qt.white))
-        painter.drawEllipse(circle_x, 5, 20, 20)
+        painter.drawEllipse(circle_x, 5, 25, 25)
     
     def mousePressEvent(self, event):
         self.is_on = not self.is_on
@@ -74,36 +74,38 @@ class OptimizationCard(QFrame):
         self.category_name = category_name
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
         self.setLineWidth(2)
+        self.setFixedHeight(100)
         self.setStyleSheet("""
             QFrame {
-                background-color: #2b2b2b;
-                border: 2px solid #3a3a3a;
-                border-radius: 10px;
-                padding: 15px;
+                background-color: #2d3e50;
+                border: 1px solid #34495e;
+                border-radius: 8px;
+                padding: 20px;
             }
         """)
         
         layout = QHBoxLayout()
+        layout.setContentsMargins(20, 15, 20, 15)
         
         text_layout = QVBoxLayout()
+        text_layout.setSpacing(5)
         
         title_label = QLabel(title)
         title_font = QFont()
-        title_font.setPointSize(14)
+        title_font.setPointSize(13)
         title_font.setBold(True)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("color: white;")
+        title_label.setStyleSheet("color: #ecf0f1;")
         
         desc_label = QLabel(description)
         desc_font = QFont()
-        desc_font.setPointSize(9)
+        desc_font.setPointSize(8)
         desc_label.setFont(desc_font)
-        desc_label.setStyleSheet("color: #aaaaaa;")
+        desc_label.setStyleSheet("color: #95a5a6;")
         desc_label.setWordWrap(True)
         
         text_layout.addWidget(title_label)
         text_layout.addWidget(desc_label)
-        text_layout.addStretch()
         
         layout.addLayout(text_layout, 1)
         
@@ -116,39 +118,42 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Windows Optimizer")
-        self.setGeometry(100, 100, 900, 700)
-        self.setStyleSheet("background-color: #1e1e1e;")
+        self.setGeometry(100, 100, 1000, 750)
+        self.setStyleSheet("background-color: #1c2833;")
         
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(30, 20, 30, 20)
+        main_layout.setSpacing(20)
         
-        header = QLabel("Windows System Optimizer")
+        header = QLabel("Select Optimization Options")
         header_font = QFont()
-        header_font.setPointSize(18)
+        header_font.setPointSize(16)
         header_font.setBold(True)
         header.setFont(header_font)
-        header.setStyleSheet("color: white; padding: 20px;")
-        header.setAlignment(Qt.AlignCenter)
+        header.setStyleSheet("color: #ecf0f1; padding: 10px;")
+        header.setAlignment(Qt.AlignLeft)
         main_layout.addWidget(header)
         
-        self.apply_all_btn = QPushButton("Apply All Optimizations")
+        self.apply_all_btn = QPushButton("✓ Apply All Optimizations")
+        self.apply_all_btn.setFixedHeight(50)
         self.apply_all_btn.setStyleSheet("""
             QPushButton {
-                background-color: #0078d4;
+                background-color: #2980b9;
                 color: white;
                 border: none;
-                border-radius: 5px;
+                border-radius: 8px;
                 padding: 15px;
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #1084d8;
+                background-color: #3498db;
             }
             QPushButton:pressed {
-                background-color: #006cbd;
+                background-color: #2471a3;
             }
         """)
         self.apply_all_btn.clicked.connect(self.apply_all)
@@ -156,11 +161,29 @@ class MainWindow(QMainWindow):
         
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("border: none;")
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollBar:vertical {
+                background: #34495e;
+                width: 12px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background: #7f8c8d;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #95a5a6;
+            }
+        """)
         
         scroll_content = QWidget()
+        scroll_content.setStyleSheet("background-color: transparent;")
         scroll_layout = QVBoxLayout()
-        scroll_layout.setSpacing(15)
+        scroll_layout.setSpacing(12)
         
         self.categories = [
             ("Network Optimizations", "Optimize TCP/IP settings, DNS cache, and network adapter configurations", "network", network),
