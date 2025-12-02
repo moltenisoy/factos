@@ -63,8 +63,62 @@ def apply():
 def get_backup_data():
     backup = {}
     backup['registry'] = []
+    
+    registry_paths = [
+        (r'SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000', ['EnableUlps', 'PP_ThermalAutoThrottlingEnable', 'D3PCLatency', 'LOWLATENCY']),
+        (r'SYSTEM\CurrentControlSet\Control\GraphicsDrivers', ['HwSchMode', 'TdrLevel', 'DxMaxFrameLatency']),
+        (r'SOFTWARE\Microsoft\Windows\Dwm', ['OverlayTestMode', 'ForceDoubleBuffer']),
+    ]
+    
+    for path, value_names in registry_paths:
+        try:
+            key = reg.OpenKey(reg.HKEY_LOCAL_MACHINE, path, 0, reg.KEY_READ)
+            for name in value_names:
+                try:
+                    value, vtype = reg.QueryValueEx(key, name)
+                    backup['registry'].append((path, name, value, vtype, False))
+                except:
+                    backup['registry'].append((path, name, None, None, False))
+            reg.CloseKey(key)
+        except:
+            pass
+    
+    user_paths = [
+        (r'Software\Microsoft\Windows\DWM', ['EnableAnimations', 'EnableTransparency']),
+    ]
+    
+    for path, value_names in user_paths:
+        try:
+            key = reg.OpenKey(reg.HKEY_CURRENT_USER, path, 0, reg.KEY_READ)
+            for name in value_names:
+                try:
+                    value, vtype = reg.QueryValueEx(key, name)
+                    backup['registry'].append((path, name, value, vtype, True))
+                except:
+                    backup['registry'].append((path, name, None, None, True))
+            reg.CloseKey(key)
+        except:
+            pass
+    
     return backup
 
 def restore(backup_data):
     if not backup_data:
         return
+    
+    for entry in backup_data.get('registry', []):
+        if len(entry) == 5:
+            path, name, value, vtype, is_user = entry
+        else:
+            path, name, value, vtype = entry
+            is_user = False
+        
+        root_key = reg.HKEY_CURRENT_USER if is_user else reg.HKEY_LOCAL_MACHINE
+        
+        try:
+            if value is not None:
+                key = reg.CreateKeyEx(root_key, path, 0, reg.KEY_WRITE)
+                reg.SetValueEx(key, name, 0, vtype, value)
+                reg.CloseKey(key)
+        except:
+            pass

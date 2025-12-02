@@ -102,20 +102,27 @@ def apply():
 
 def get_backup_data():
     backup = {}
-    backup['commands'] = []
     backup['registry'] = []
-    backup['services'] = []
     
-    try:
-        key = reg.OpenKey(reg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Services\Tcpip\Parameters', 0, reg.KEY_READ)
+    registry_paths = [
+        (r'SYSTEM\CurrentControlSet\Services\Tcpip\ServiceProvider', ['LocalPriority', 'HostsPriority', 'DnsPriority', 'NetbtPriority']),
+        (r'SYSTEM\CurrentControlSet\Services\Tcpip\Parameters', ['TcpAckFrequency', 'TCPNoDelay', 'TcpDelAckTicks', 'MaxUserPort', 'TcpWindowSize', 'GlobalMaxTcpWindowSize']),
+        (r'SYSTEM\CurrentControlSet\Services\Dnscache\Parameters', ['CacheHashTableBucketSize', 'CacheHashTableSize', 'NegativeCacheTime']),
+        (r'SYSTEM\CurrentControlSet\Services\AFD\Parameters', ['DefaultSendWindow', 'DefaultReceiveWindow']),
+    ]
+    
+    for path, value_names in registry_paths:
         try:
-            value, vtype = reg.QueryValueEx(key, 'TcpAckFrequency')
-            backup['registry'].append((r'SYSTEM\CurrentControlSet\Services\Tcpip\Parameters', 'TcpAckFrequency', value, vtype))
+            key = reg.OpenKey(reg.HKEY_LOCAL_MACHINE, path, 0, reg.KEY_READ)
+            for name in value_names:
+                try:
+                    value, vtype = reg.QueryValueEx(key, name)
+                    backup['registry'].append((path, name, value, vtype))
+                except:
+                    backup['registry'].append((path, name, None, None))
+            reg.CloseKey(key)
         except:
             pass
-        reg.CloseKey(key)
-    except:
-        pass
     
     return backup
 
@@ -125,8 +132,16 @@ def restore(backup_data):
     
     for path, name, value, vtype in backup_data.get('registry', []):
         try:
-            key = reg.CreateKeyEx(reg.HKEY_LOCAL_MACHINE, path, 0, reg.KEY_WRITE)
-            reg.SetValueEx(key, name, 0, vtype, value)
-            reg.CloseKey(key)
+            if value is not None:
+                key = reg.CreateKeyEx(reg.HKEY_LOCAL_MACHINE, path, 0, reg.KEY_WRITE)
+                reg.SetValueEx(key, name, 0, vtype, value)
+                reg.CloseKey(key)
+            else:
+                try:
+                    key = reg.OpenKey(reg.HKEY_LOCAL_MACHINE, path, 0, reg.KEY_WRITE)
+                    reg.DeleteValue(key, name)
+                    reg.CloseKey(key)
+                except:
+                    pass
         except:
             pass

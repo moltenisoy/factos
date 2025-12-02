@@ -232,16 +232,38 @@ class MainWindow(QMainWindow):
                 pass
     
     def apply_all(self):
+        self.apply_all_btn.setEnabled(False)
+        self.apply_all_btn.setText("Applying...")
+        self.pending_apply_all = []
+        
         for title, desc, cat_name, module in self.categories:
             try:
                 if not manager.has_backup(cat_name):
-                    backup_data = module.get_backup_data()
-                    manager.save_backup(cat_name, backup_data)
-                    worker = OptimizationWorker(module, cat_name, True)
-                    worker.start()
-                    self.workers.append(worker)
+                    self.pending_apply_all.append((cat_name, module))
             except:
                 pass
+        
+        self.apply_next_in_queue()
+    
+    def apply_next_in_queue(self):
+        if not hasattr(self, 'pending_apply_all') or not self.pending_apply_all:
+            self.apply_all_btn.setEnabled(True)
+            self.apply_all_btn.setText("✓ Apply All Optimizations")
+            return
+        
+        cat_name, module = self.pending_apply_all.pop(0)
+        try:
+            backup_data = module.get_backup_data()
+            manager.save_backup(cat_name, backup_data)
+            worker = OptimizationWorker(module, cat_name, True)
+            worker.finished.connect(lambda success: self.on_apply_all_item_finished())
+            self.workers.append(worker)
+            worker.start()
+        except:
+            self.apply_next_in_queue()
+    
+    def on_apply_all_item_finished(self):
+        self.apply_next_in_queue()
 
 def run():
     if not is_admin():

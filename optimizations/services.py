@@ -63,8 +63,42 @@ def apply():
 def get_backup_data():
     backup = {}
     backup['services'] = []
+    
+    services_to_backup = [
+        'workfolderssvc', 'BthAvctpSvc', 'BthHFSrv', 'BTAGService',
+        'bthserv', 'Netlogon', 'DPS', 'WdiServiceHost', 'PcaSvc',
+        'diagsvc', 'SSDPSRV', 'Spooler', 'WSearch', 'SysMain'
+    ]
+    
+    for service in services_to_backup:
+        try:
+            result = subprocess.run(f'sc qc "{service}"', shell=True, capture_output=True, text=True)
+            if 'START_TYPE' in result.stdout:
+                for line in result.stdout.split('\n'):
+                    if 'START_TYPE' in line:
+                        start_type = line.split(':')[1].strip().split()[0]
+                        backup['services'].append((service, start_type))
+                        break
+        except:
+            pass
+    
     return backup
 
 def restore(backup_data):
     if not backup_data:
         return
+    
+    for service, start_type in backup_data.get('services', []):
+        try:
+            type_map = {
+                'AUTO_START': 'auto',
+                'DEMAND_START': 'demand',
+                'DISABLED': 'disabled',
+                'BOOT_START': 'boot',
+                'SYSTEM_START': 'system'
+            }
+            
+            start_value = type_map.get(start_type, 'demand')
+            subprocess.run(f'sc config "{service}" start={start_value}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except:
+            pass
