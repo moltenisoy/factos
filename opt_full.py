@@ -1,7 +1,6 @@
 import subprocess
 import os
 import sys
-import json
 
 BACKUP_FILE = 'backup_opt_full.json'
 

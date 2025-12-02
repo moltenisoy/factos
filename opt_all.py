@@ -1,7 +1,5 @@
 import subprocess
 import winreg as reg
-import json
-from pathlib import Path
 
 BACKUP_FILE = 'backup_all.json'
 

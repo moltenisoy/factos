@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QColor
-import opt_full
 import opt_network
 import opt_graphics
 import opt_power
@@ -71,7 +70,14 @@ class ToggleSwitch(QWidget):
     def mousePressEvent(self, event):
         self.is_on = not self.is_on
         self.update()
-        self.parent().parent().parent().toggle_optimization(self.backup_file, self.is_on)
+        # Navigate to MainWindow: ToggleSwitch -> OptimizationCard -> scroll_content -> scroll (QScrollArea) -> central_widget -> MainWindow
+        # We need to find the MainWindow instance in the parent chain
+        widget = self
+        while widget is not None:
+            widget = widget.parent()
+            if isinstance(widget, MainWindow):
+                widget.toggle_optimization(self.backup_file, self.is_on)
+                break
 
 class OptimizationCard(QFrame):
     def __init__(self, title, description, backup_file, parent=None):
@@ -226,7 +232,7 @@ class MainWindow(QMainWindow):
     
     def toggle_optimization(self, backup_file, is_enable):
         apply_func = None
-        for title, desc, bf, func in self.categories:
+        for _title, _desc, bf, func in self.categories:
             if bf == backup_file:
                 apply_func = func
                 break
@@ -234,13 +240,13 @@ class MainWindow(QMainWindow):
         if apply_func:
             try:
                 worker = OptimizationWorker(apply_func, backup_file, is_enable)
-                worker.finished.connect(lambda success: self.on_optimization_finished(success, backup_file))
+                worker.finished.connect(lambda _success: self.on_optimization_finished(backup_file))
                 self.workers.append(worker)
                 worker.start()
             except Exception:
                 pass
     
-    def on_optimization_finished(self, success, backup_file):
+    def on_optimization_finished(self, backup_file=None):
         if self.workers:
             try:
                 self.workers = [w for w in self.workers if w.isRunning()]
@@ -251,13 +257,13 @@ class MainWindow(QMainWindow):
         self.apply_all_btn.setEnabled(False)
         self.apply_all_btn.setText("Aplicando...")
         
-        for title, desc, backup_file, apply_func in self.categories:
+        for _title, _desc, backup_file, apply_func in self.categories:
             try:
                 if not backup_mgr.has_backup(backup_file):
                     backup_data = {'backup_created': True}
                     backup_mgr.save_backup(backup_file, backup_data)
                     worker = OptimizationWorker(apply_func, backup_file, True)
-                    worker.finished.connect(lambda: self.on_apply_all_finished())
+                    worker.finished.connect(self.on_apply_all_finished)
                     self.workers.append(worker)
                     worker.start()
             except Exception:

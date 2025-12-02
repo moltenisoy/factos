@@ -1,12 +1,11 @@
 import subprocess
 import winreg as reg
-import json
 
 BACKUP_FILE = 'backup_opt_graphics.json'
 
 def run_cmd(cmd):
     try:
-        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
     except Exception:
         pass
 
