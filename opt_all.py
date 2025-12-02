@@ -3,11 +3,18 @@ import winreg as reg
 
 BACKUP_FILE = 'backup_all.json'
 
+
 def run_cmd(cmd):
     try:
-        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False)
     except Exception:
         pass
+
 
 def set_reg(root_key, path, name, value, value_type):
     try:
@@ -16,6 +23,7 @@ def set_reg(root_key, path, name, value, value_type):
         reg.CloseKey(key)
     except Exception:
         pass
+
 
 def get_reg(root_key, path, name):
     try:
@@ -26,11 +34,13 @@ def get_reg(root_key, path, name):
     except Exception:
         return (None, None)
 
+
 def apply_all():
     run_cmd("netsh int teredo set state disabled")
     run_cmd("netsh int tcp set heuristics disabled")
     run_cmd("netsh winsock reset")
-    run_cmd("netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent")
+    run_cmd(
+        "netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent")
     run_cmd("netsh interface tcp set global initialrto=2000")
     run_cmd("netsh advfirewall set allprofiles state off")
     run_cmd("netsh int tcp set global autotuninglevel=disabled")
@@ -43,14 +53,15 @@ def apply_all():
     run_cmd("netsh int tcp set global fastopen=enabled")
     run_cmd("netsh Int tcp set global nonsackrttresiliency=disabled")
     run_cmd("netsh int tcp set global ecncapability=disabled")
-    run_cmd("netsh interface ipv4 set subinterface \"Ethernet\" mtu=1500 store=persistent")
+    run_cmd(
+        "netsh interface ipv4 set subinterface \"Ethernet\" mtu=1500 store=persistent")
     run_cmd("netsh int ipv4 set dynamicportrange protocol=tcp start=1025 num=64511")
     run_cmd("netsh Int ipv4 set glob defaultcurhoplimit=255")
     run_cmd("netsh Int tcp set global maxsynretransmissions=2")
     run_cmd("netsh int tcp set global initialwindowsize=65535")
     run_cmd("netsh int tcp set global numack=2")
     run_cmd("netsh int tcp set global ackdelay=0")
-    
+
     run_cmd("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"LocalPriority\" /t REG_DWORD /d \"4\" /f")
     run_cmd("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"HostsPriority\" /t REG_DWORD /d \"5\" /f")
     run_cmd("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"DnsPriority\" /t REG_DWORD /d \"6\" /f")
@@ -68,9 +79,11 @@ def apply_all():
     run_cmd("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"GlobalMaxTcpWindowSize\" /t REG_DWORD /d 65535 /f")
     run_cmd("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnableNetDMA\" /t REG_DWORD /d 0 /f")
 
+
 def get_backup_data():
     backup = {'marker': 'backup_created'}
     return backup
+
 
 def restore_from_backup(backup_data):
     if not backup_data or 'marker' not in backup_data:
