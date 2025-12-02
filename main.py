@@ -1,4 +1,4 @@
-from gui.main_window import run
+from app_gui import run
 
 if __name__ == '__main__':
     run()

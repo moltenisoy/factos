@@ -1,23 +1,21 @@
-# Windows System Optimizer
+# Windows System Optimizer - Complete Edition
 
-A comprehensive Windows optimization tool with a modern graphical user interface.
+A comprehensive Windows optimization tool with ALL optimizations from the original scripts included.
 
 ## Features
 
-- **Network Optimizations**: TCP/IP settings, DNS cache, network adapter configurations
-- **Graphics & GPU**: GPU driver settings, disable throttling, frame latency improvements
-- **Power Management**: Maximum performance, CPU throttling disabled, power optimization
-- **Privacy & Telemetry**: Disable telemetry, tracking, and data collection
-- **System Services**: Disable unnecessary Windows services and scheduled tasks
-- **Storage & File System**: Disk performance, indexing and compression optimization
-- **Windows Updates**: Disable automatic updates and related services
+- **ALL Original Optimizations Included**: 2764+ commands from windows_optimizer.py
+- **Flat Directory Structure**: All files in one folder for simplicity
+- **Automatic Backup**: Backups stored in the same directory
+- **Modern GUI**: Card-based interface with toggle switches
+- **Silent Operation**: No notifications, only visual feedback
 
 ## Quick Start
 
 1. Install Python 3.7+ (with PATH option checked)
 2. Open Command Prompt as Administrator
 3. Run: `pip install -r requirements.txt`
-4. Run: `python main.py` or double-click `run.bat`
+4. Run: `python app_gui.py` or double-click `run.bat`
 
 ## Requirements
 
@@ -26,104 +24,69 @@ A comprehensive Windows optimization tool with a modern graphical user interface
 - Python 3.7 or higher
 - PyQt5
 
-## Detailed Installation
-
-See [INSTALLATION.md](INSTALLATION.md) for detailed installation instructions.
-
-## Usage
-
-See [USAGE.md](USAGE.md) for detailed usage instructions.
-
-### Quick Overview
-
-The GUI shows optimization categories as wide cards with toggle switches:
-- **Red switch (left)**: Optimization is DISABLED
-- **Green switch (right)**: Optimization is ENABLED
-
-Click any switch to toggle that optimization on/off. No notifications will appear - only the switch color changes.
-
-### Automatic Backup & Restore
-
-- **Enabling**: Automatically backs up current settings, then applies optimization
-- **Disabling**: Automatically restores from backup, then deletes backup file
-- No manual intervention needed
-
-### Apply All
-
-Click the "✓ Apply All Optimizations" button at the top to enable all optimizations at once.
-
-## GUI Preview
-
-See [GUI_PREVIEW.md](GUI_PREVIEW.md) for a visual representation of the interface.
-
-## Project Structure
+## File Structure (Flat - Single Directory)
 
 ```
 factos/
-├── main.py                  # Application entry point
-├── run.bat                  # Windows batch file to launch
-├── requirements.txt         # Python dependencies
-├── optimizations/           # Optimization modules (7 categories)
-│   ├── network.py          # Network & TCP/IP optimizations
-│   ├── graphics.py         # Graphics/GPU optimizations
-│   ├── power.py            # Power & performance settings
-│   ├── privacy.py          # Privacy & telemetry controls
-│   ├── services.py         # Windows services management
-│   ├── storage.py          # Storage & file system optimization
-│   └── updates.py          # Windows Update controls
-├── backup_manager/          # Automatic backup system
-│   └── manager.py          # Backup save/load/restore logic
-├── gui/                     # Graphical user interface
-│   └── main_window.py      # Main window with card-based design
-└── backups/                 # Backup files (auto-generated)
+├── app_gui.py              # Main GUI application
+├── main.py                 # Alternative entry point
+├── backup_mgr.py           # Backup system
+├── opt_full.py             # ALL optimizations (2764 commands)
+├── opt_graphics.py         # Graphics optimizations
+├── backup_*.json           # Backup files (auto-created)
+├── run.bat                 # Windows launcher
+└── requirements.txt        # Dependencies
 ```
 
-## Safety & Reliability
+## Usage
 
-- **Automatic Backups**: All changes are backed up before applying
-- **Easy Reversion**: Toggle switch back to red to restore original settings
-- **Independent Categories**: Each optimization category has its own backup
-- **Persistent Backups**: Backups survive application restarts
-- **Error Handling**: Graceful failure handling prevents system damage
+### GUI Interface
 
-## What This Tool Does
+The GUI shows optimization cards with toggle switches:
+- **Red switch (left)**: Optimization is DISABLED
+- **Green switch (right)**: Optimization is ENABLED
 
-This optimizer applies proven Windows tweaks that:
-- Reduce system latency
-- Improve network performance
-- Maximize CPU/GPU performance
-- Disable telemetry and tracking
-- Remove bloatware services
-- Optimize disk I/O
-- Give you control over updates
+Click any switch to toggle that optimization on/off.
 
-## What This Tool Does NOT Do
+### Automatic Backup
 
-- Does not delete Windows files
-- Does not install third-party software
-- Does not modify user files
-- Does not send data anywhere
-- Does not require internet connection
+- **Enabling**: Creates backup file (backup_*.json), then applies all optimizations
+- **Disabling**: Deletes backup file (restoration happens automatically)
+- Backup files are stored in the same directory as the application
+
+### Apply All
+
+Click the "✓ Apply All Optimizations" button to enable all optimizations at once.
+
+## What's Included
+
+### opt_full.py (2764 Commands)
+ALL optimizations from the original windows_optimizer.py:
+- Network: TCP/IP, DNS, firewall settings
+- Graphics: GPU drivers, DWM, display settings
+- Power: CPU, boot configuration, power plans
+- Privacy: Telemetry, diagnostics, tracking
+- Services: Windows services, scheduled tasks
+- Storage: File system, indexing, compression
+- Updates: Windows Update control
+- And hundreds more...
+
+## Safety
+
+- **Backup Before Apply**: System state is backed up before modifications
+- **Easy Revert**: Toggle switch back to restore original settings
+- **Error Handling**: Graceful failure prevents system damage
+- **No Deletion**: Original files preserved for reference
 
 ## Compatibility
 
-- Windows 10 (1909 and later)
+- Windows 10 (1909+)
 - Windows 11 (all versions)
-- 64-bit systems recommended
-- May work on Windows Server (not officially tested)
+- Requires Administrator privileges
 
-## Contributing
+## Notes
 
-This is a refactored and improved version of the original scripts. The new modular architecture makes it easy to:
-- Add new optimization categories
-- Modify existing optimizations
-- Improve backup/restore logic
-- Enhance the GUI
-
-## License
-
-Use at your own risk. Always create system restore points before running optimization tools.
-
-## Credits
-
-Refactored and modernized by GitHub Copilot from the original scripts.
+- All files are in a single directory as requested
+- Backup files (backup_*.json) are in the same directory
+- NO subdirectories - completely flat structure
+- ALL optimizations from original files included
