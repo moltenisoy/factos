@@ -10,7 +10,7 @@ from backup_manager import manager
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
+    except Exception:
         return False
 
 class OptimizationWorker(QThread):
@@ -34,7 +34,7 @@ class OptimizationWorker(QThread):
                     self.optimization_module.restore(backup_data)
                     manager.delete_backup(self.category_name)
             self.finished.emit(True)
-        except:
+        except Exception:
             self.finished.emit(False)
 
 class ToggleSwitch(QWidget):
@@ -221,14 +221,14 @@ class MainWindow(QMainWindow):
                 worker.finished.connect(lambda success: self.on_optimization_finished(success, category_name))
                 self.workers.append(worker)
                 worker.start()
-            except:
+            except Exception:
                 pass
     
     def on_optimization_finished(self, success, category_name):
         if self.workers:
             try:
                 self.workers = [w for w in self.workers if w.isRunning()]
-            except:
+            except Exception:
                 pass
     
     def apply_all(self):
@@ -240,7 +240,7 @@ class MainWindow(QMainWindow):
             try:
                 if not manager.has_backup(cat_name):
                     self.pending_apply_all.append((cat_name, module))
-            except:
+            except Exception:
                 pass
         
         self.apply_next_in_queue()
@@ -259,7 +259,7 @@ class MainWindow(QMainWindow):
             worker.finished.connect(lambda success: self.on_apply_all_item_finished())
             self.workers.append(worker)
             worker.start()
-        except:
+        except Exception:
             self.apply_next_in_queue()
     
     def on_apply_all_item_finished(self):
