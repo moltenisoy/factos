@@ -3,7 +3,6 @@ import winreg as reg
 import sys
 import os
 import ctypes
-import uuid
 
 def is_admin():
     try:

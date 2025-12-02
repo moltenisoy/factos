@@ -1,15 +1,21 @@
 import subprocess
 import os
 import sys
-import json
 
 BACKUP_FILE = 'backup_opt_full.json'
 
+
 def run(cmd):
     try:
-        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False)
     except Exception:
         pass
+
 
 def apply_all():
     if os.name != "nt":
@@ -165,8 +171,10 @@ def apply_all():
     run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"& { Get-NetAdapter | Enable-NetAdapterRss -ErrorAction SilentlyContinue; Get-NetAdapter | ForEach-Object { try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \'Receive Buffers\' -RegistryValue 512 -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \'Transmit Buffers\' -RegistryValue 512 -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \'Energy Efficient Ethernet\' -RegistryValue \'0\' -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \'Interrupt Moderation\' -RegistryValue \'Disabled\' -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \'Flow Control\' -RegistryValue \'Disabled\' -ErrorAction SilentlyContinue } catch {} } }\"")
     run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"Get-NetAdapter | Disable-NetAdapterPowerManagement -WakeOnMagicPacket:$false -WakeOnPattern:$false -DeviceSleepOnDisconnect:$false -SelectiveSuspend:$false -ArpOffload:$false -NSOffload:$false -D0PacketCoalescing:$false -RsnRekeyOffload:$false -NoRestart -ErrorAction SilentlyContinue\"")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Chrome\" /v \"DefaultSensorsSetting\" /t REG_DWORD /d \"2\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{a6e02196-c1bf-4989-8a94-144eee4a9bb2}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{a6e02196-c1bf-4989-8a94-144eee4a9bb2}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{a6e02196-c1bf-4989-8a94-144eee4a9bb2}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{a6e02196-c1bf-4989-8a94-144eee4a9bb2}\" /f")
     run("sc config \"workfolderssvc\" start=demand")
     run("sc config \"workfolderssvc\" start= demand")
     run("sc config workfolderssvc start=disabled")
@@ -625,7 +633,8 @@ def apply_all():
     run("Reg.exe add \"HKCU\\Software\\Microsoft\\Office\\16.0\\OSM\" /v \"EnableFileObfuscation\" /t REG_DWORD /d \"1\" /f")
     run("schtasks /change /tn \"\\Microsoft\\Office\\OfficeTelemetryAgentFallBack2016\" /Disable")
     run("schtasks /change /tn \"\\Microsoft\\Office\\OfficeTelemetryAgentLogOn2016\" /Disable")
-    run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"Get-ScheduledTask | Where-Object {$_.TaskName -match \'Diag|Telemetry|Customer Experience|OfficeClickToRun\'} | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue\"")
+    run(
+        "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Get-ScheduledTask | Where-Object {$_.TaskName -match \'Diag|Telemetry|Customer Experience|OfficeClickToRun\'} | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue\"")
     run("reg add \"HKCU\\SOFTWARE\\Microsoft\\Office\\16.0\\Common\\ClientTelemetry\" /v \"DisableTelemetry\" /t REG_DWORD /d 1 /f")
     run("reg add \"HKCU\\SOFTWARE\\Microsoft\\Office\\16.0\\Common\\Feedback\" /v \"Enabled\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKCU\\SOFTWARE\\Policies\\microsoft\\office\\16.0\\osm\\preventedapplications\" /v \"accesssolution\" /t REG_DWORD /d 1 /f")
@@ -937,7 +946,8 @@ def apply_all():
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"$package = Get-AppxPackage -AllUsers \'Microsoft.XboxGameCallableUI\'; if (LOCALAPPDATA\\Packages\\$($package.PackageFamilyName)\"\"\"); foreach($dir in $directories) {; if ( (Test-Path \"\"\"$dir\"\"\") ) { continue }; cmd /c (\'takeown /f \"\"\"\' + $dir + \'\"\"\" /r /d y 1> nul\'); if($LASTEXITCODE) { throw \'Failed to take ownership\' }; cmd /c (\'icacls \"\"\"\' + $dir + \'\"\"\" /grant administrators:F /t 1> nul\'); if($LASTEXITCODE) { throw \'Failed to take ownership\' }; $files = Get-ChildItem -File -Path $dir -Recurse -Force; foreach($file in $files) {; if($file.Name.EndsWith(\'.OLD\')) { continue }; $newName = $file.FullName + \'.OLD\'; Write-Host \"\"\"Rename \'$($file.FullName)\' to \'$newName\'\"\"\"; Move-Item -LiteralPath \"\"\"$($file.FullName)\"\"\" -Destination \"\"\"$newName\"\"\" -Force; }; }\"")
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"$package = Get-AppxPackage -AllUsers \'Windows.CBSPreview\'; if (LOCALAPPDATA\\Packages\\$($package.PackageFamilyName)\"\"\"); foreach($dir in $directories) {; if ( (Test-Path \"\"\"$dir\"\"\") ) { continue }; cmd /c (\'takeown /f \"\"\"\' + $dir + \'\"\"\" /r /d y 1> nul\'); if($LASTEXITCODE) { throw \'Failed to take ownership\' }; cmd /c (\'icacls \"\"\"\' + $dir + \'\"\"\" /grant administrators:F /t 1> nul\'); if($LASTEXITCODE) { throw \'Failed to take ownership\' }; $files = Get-ChildItem -File -Path $dir -Recurse -Force; foreach($file in $files) {; if($file.Name.EndsWith(\'.OLD\')) { continue }; $newName = $file.FullName + \'.OLD\'; Write-Host \"\"\"Rename \'$($file.FullName)\' to \'$newName\'\"\"\"; Move-Item -LiteralPath \"\"\"$($file.FullName)\"\"\" -Destination \"\"\"$newName\"\"\" -Force; }; }\"")
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"$package = Get-AppxPackage -AllUsers \'Windows.PrintDialog\'; if (LOCALAPPDATA\\Packages\\$($package.PackageFamilyName)\"\"\"); foreach($dir in $directories) {; if ( (Test-Path \"\"\"$dir\"\"\") ) { continue }; cmd /c (\'takeown /f \"\"\"\' + $dir + \'\"\"\" /r /d y 1> nul\'); if($LASTEXITCODE) { throw \'Failed to take ownership\' }; cmd /c (\'icacls \"\"\"\' + $dir + \'\"\"\" /grant administrators:F /t 1> nul\'); if($LASTEXITCODE) { throw \'Failed to take ownership\' }; $files = Get-ChildItem -File -Path $dir -Recurse -Force; foreach($file in $files) {; if($file.Name.EndsWith(\'.OLD\')) { continue }; $newName = $file.FullName + \'.OLD\'; Write-Host \"\"\"Rename \'$($file.FullName)\' to \'$newName\'\"\"\"; Move-Item -LiteralPath \"\"\"$($file.FullName)\"\"\" -Destination \"\"\"$newName\"\"\" -Force; }; }\"")
-    run("powershell -Command \"Get-AppxPackage -AllUsers | Where-Object { $_.PackageFullName -eq \'MicrosoftTeams_23285.3703.2471.4627_x64__8wekyb3d8bbwe\' } | Remove-AppxPackage\"")
+    run(
+        "powershell -Command \"Get-AppxPackage -AllUsers | Where-Object { $_.PackageFullName -eq \'MicrosoftTeams_23285.3703.2471.4627_x64__8wekyb3d8bbwe\' } | Remove-AppxPackage\"")
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"Get-AppxPackage \'Microsoft.HEVCVideoExtension\' | Remove-AppxPackage\"")
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"Get-AppxPackage \'Microsoft.RawImageExtension\' | Remove-AppxPackage\"")
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"Get-AppxPackage \'Microsoft.Windows.CallingShellApp\' | Remove-AppxPackage\"")
@@ -966,7 +976,8 @@ def apply_all():
     run("del /f \"C:\\Program Files\\Mozilla Firefox\\pingsender.exe\"")
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Mozilla\\Firefox\" /v \"DisableAppUpdate\" /t REG_DWORD /d \"1\" /f")
     run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"& { Get-NetAdapter | ForEach-Object { Disable-NetAdapterChecksumOffload -Name $_.Name -IpIPv4 -TcpIPv4 -TcpIPv6 -UdpIPv4 -UdpIPv6 -ErrorAction SilentlyContinue; Disable-NetAdapterLso -Name $_.Name -IPv4 -IPv6 -ErrorAction SilentlyContinue } }\"")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"GCOOPTION_DisableGPIOPowerSaveMode\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"GCOOPTION_DisableGPIOPowerSaveMode\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\" /v \"AppReadinessLogonComplete\" /t REG_DWORD /d \"1\" /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\KeyExchangeAlgorithms\\Diffie-Hellman\" /v \"ServerMinKeyBitLength\" /t \"REG_DWORD\" /d \"2048\" /f")
     run("PowerShell -ExecutionPolicy Unrestricted -Command \"reg add \'HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\KeyExchangeAlgorithms\\Diffie-Hellman\' /v \'ClientMinKeyBitLength\' /t \'REG_DWORD\' /d \'2048\' /f\"")
@@ -1181,9 +1192,12 @@ def apply_all():
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\WinHttp\" /v \"DisableBranchCache\" /t REG_DWORD /d 1 /f")
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Network\" /v \"Scheduling Category\" /t REG_SZ /d \"High\" /f")
     run("reg add \"HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences\" /v \"DirectXUserGlobalSettings\" /t REG_SZ /d \"SwapEffectUpgradeEnable=1;VRROptionEnable=1;\" /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PowerThrottling\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableULPS\" /t REG_DWORD /d 0 /f")
+    run(
+        "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PowerThrottling\" /t REG_DWORD /d 0 /f")
+    run(
+        "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d 0 /f")
+    run(
+        "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableULPS\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" /v \"DisableAcrylicBackgroundOnLogon\" /t REG_DWORD /d 1 /f")
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" /v \"verbosestatus\" /t REG_DWORD /d 1 /f")
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OptimalLayout\" /v \"EnableAutoLayout\" /t REG_DWORD /d 0 /f")
@@ -1267,7 +1281,8 @@ def apply_all():
     run("reg add \"HKCU\\Software\\Classes\\CLSID\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}\" /v \"System.IsPinnedToNameSpaceTree\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\FileHistory\" /v \"Disabled\" /t REG_DWORD /d 1 /f")
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\PolicyManager\\default\\System\\TurnOffFileHistory\" /v \"value\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{36fc9e60-c465-11cf-8056-444553540000}\\000%%i\" /v \"IdleEnable\" /t REG_DWORD /d 0 /f")
+    run(
+        "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{36fc9e60-c465-11cf-8056-444553540000}\\000%%i\" /v \"IdleEnable\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\storahci\\Parameters\\Device\" /v \"EnableDIPM\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\storahci\\Parameters\\Device\" /v \"EnableHIPM\" /t REG_DWORD /d 0 /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem\" /v \"NtfsMftZoneReservation\" /t REG_DWORD /d \"1\" /f")
@@ -1282,7 +1297,8 @@ def apply_all():
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Chrome\" /v \"DefaultFileSystemWriteGuardSetting\" /t REG_DWORD /d \"3\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\DefragPath\" /f")
     run("REG ADD \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" /v \"NoLowDiskSpaceChecks\" /t REG_DWORD /d 1 /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\AllFilesystemObjects\\shellex\\PropertySheetHandlers\\{7EFA68C6-086B-43e1-A2D2-55A113531240}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\AllFilesystemObjects\\shellex\\PropertySheetHandlers\\{7EFA68C6-086B-43e1-A2D2-55A113531240}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Storage_Manage\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Storage_Migration\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Storage_Migration_Cancel\" /f")
@@ -1361,13 +1377,18 @@ def apply_all():
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\\FontSmoothing\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\\MenuAnimation\" /v \"DefaultApplied\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\\TaskbarAnimations\" /v \"DefaultApplied\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_GPUPowerDownEnabled\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMGpuId\" /t REG_DWORD /d \"256\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_GPUPowerDownEnabled\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMGpuId\" /t REG_DWORD /d \"256\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"MaxIAverageGraphicsLatencyInOneBucket\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"MiracastPerfTrackGraphicsLatency\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"GPUPreemptionLevel\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidGfxPreemptionVGPU\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidBufferPreemptionForHighTdrTimeout\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"GPUPreemptionLevel\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidGfxPreemptionVGPU\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidBufferPreemptionForHighTdrTimeout\" /t REG_DWORD /d \"0\" /f")
     run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\" /v \"VisualFXSetting\" /t REG_DWORD /d 2 /f 2")
     run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\" /v \"VisualFXSetting\" /t REG_DWORD /d 3 /f")
     run("REG ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games\" /v \"Affinity\" /t REG_DWORD /d 4294967295 /f")
@@ -1399,7 +1420,8 @@ def apply_all():
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games\" /v \"Clock Rate\" /t REG_DWORD /d \"10000\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\GpuEnergyDrv\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\GpuEnergyDr\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_GPUPowerDownEnabled\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_GPUPowerDownEnabled\" /t REG_DWORD /d \"1\" /f")
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\DirectMusic\" /v \"DisableHWAcceleration\" /t reg_DWORD /d \"0\" /f")
     run("reg add \"HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\DirectMusic\" /v \"DisableHWAcceleration\" /t reg_DWORD /d \"0\" /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\GraphicsPerfSvc\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
@@ -1532,10 +1554,13 @@ def apply_all():
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Siuf\\Rules\" /v \"NumberOfSIUFInPeriod\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" /v \"DisableAutomaticRestartSignOn\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKEY_CURRENT_USER\\SYSTEM\\GameConfigStore\\Children\\fefe78e0-cf54-411d-9154-04b8f488bea2\" /v \"Flags\" /t REG_DWORD /d \"529\" /f")
-    run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"InstalledWin32AppsRevision\" /t REG_SZ /d \"{E00F4E01-A5F6-488E-A733-D341606BBD99}\" /f")
-    run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"InstalledPackagedAppsRevision\" /t REG_SZ /d \"{EE5761AF-9340-40EE-AFFB-D3F7ECEC59BD}\" /f")
+    run(
+        "Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"InstalledWin32AppsRevision\" /t REG_SZ /d \"{E00F4E01-A5F6-488E-A733-D341606BBD99}\" /f")
+    run(
+        "Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"InstalledPackagedAppsRevision\" /t REG_SZ /d \"{EE5761AF-9340-40EE-AFFB-D3F7ECEC59BD}\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"IsAssignedAccess\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"NamespaceSettingsRevision\" /t REG_SZ /d \"{EBDF1464-A4D5-443C-ACE8-21C7FCDF002F}\" /f")
+    run(
+        "Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"NamespaceSettingsRevision\" /t REG_SZ /d \"{EBDF1464-A4D5-443C-ACE8-21C7FCDF002F}\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"AnyAboveLockAppsActive\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\" /v \"SearchboxTaskbarMode\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AppHost\" /v \"EnableWebContentEvaluation\" /t REG_DWORD /d \"0\" /f")
@@ -1676,95 +1701,177 @@ def apply_all():
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Chrome\" /v \"DeviceMetricsReportingEnabled\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Policies\\Google\\Chrome\" /v \"MetricsReportingEnabled\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Policies\\Google\\Chrome\" /v \"DeviceMetricsReportingEnabled\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"Install{8A69D345-D564-463C-AFF1-A69D9E530F96}\" /t REG_DWORD /d \"5\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"TargetChannel{8A69D345-D564-463C-AFF1-A69D9E530F96}\" /t REG_SZ /d \"stable\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"Update{8A69D345-D564-463C-AFF1-A69D9E530F96}\" /t REG_DWORD /d \"3\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"Install{4CCED17F-7852-4AFC-9E9E-C89D8795BDD2}\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"Install{8A69D345-D564-463C-AFF1-A69D9E530F96}\" /t REG_DWORD /d \"5\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"TargetChannel{8A69D345-D564-463C-AFF1-A69D9E530F96}\" /t REG_SZ /d \"stable\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"Update{8A69D345-D564-463C-AFF1-A69D9E530F96}\" /t REG_DWORD /d \"3\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"Install{4CCED17F-7852-4AFC-9E9E-C89D8795BDD2}\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"AutoUpdateCheckPeriodMinutes\" /t REG_DWORD /d \"43200\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"DownloadPreference\" /t REG_SZ /d \"cacheable\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"UpdatesSuppressedStartHour\" /t REG_DWORD /d \"23\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"UpdatesSuppressedStartMin\" /t REG_DWORD /d \"48\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Google\\Update\" /v \"UpdatesSuppressedDurationMin\" /t REG_DWORD /d \"55\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableVceSwClockGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUvdClockGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableVCEPowerGating\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableUVDPowerGatingDynamic\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisablePowerGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableSAMUPowerGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableFBCForFullScreenApp\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableFBCSupport\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableEarlySamuInit\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableDrmdmaPowerGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_SclkDeepSleepDisable\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ActivityTarget\" /t REG_DWORD /d \"30\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ODNFeatureEnable\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_AllGraphicLevel_DownHyst\" /t REG_DWORD /d \"20\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_AllGraphicLevel_UpHyst\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_FRTEnabled\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableDMACopy\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableBlockWrite\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_MaxUVDSessions\" /t REG_DWORD /d \"32\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DalAllowDirectMemoryAccessTrig\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DalAllowDPrefSwitchingForGLSync\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"WmAgpMaxIdleClk\" /t REG_DWORD /d \"32\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_MCLKStutterModeThreshold\" /t REG_DWORD /d \"4096\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"StutterMode\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"TVEnableOverscan\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableVceSwClockGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUvdClockGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableVCEPowerGating\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableUVDPowerGatingDynamic\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisablePowerGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableSAMUPowerGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableFBCForFullScreenApp\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableFBCSupport\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableEarlySamuInit\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableDrmdmaPowerGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_SclkDeepSleepDisable\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ActivityTarget\" /t REG_DWORD /d \"30\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ODNFeatureEnable\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_AllGraphicLevel_DownHyst\" /t REG_DWORD /d \"20\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_AllGraphicLevel_UpHyst\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_FRTEnabled\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableDMACopy\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableBlockWrite\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_MaxUVDSessions\" /t REG_DWORD /d \"32\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DalAllowDirectMemoryAccessTrig\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DalAllowDPrefSwitchingForGLSync\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"WmAgpMaxIdleClk\" /t REG_DWORD /d \"32\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_MCLKStutterModeThreshold\" /t REG_DWORD /d \"4096\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"StutterMode\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"TVEnableOverscan\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\" /v \"OverlayTestMode\" /t REG_DWORD /d \"5\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"MLF\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"EQAA\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"PowerState\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AreaAniso_DEF\" /t REG_SZ /d \"8\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"SurfaceFormatReplacements_DEF\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Main3D_DEF\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoType_DEF\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoDegree_DEF\" /t REG_SZ /d \"4\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceTripleBuffering\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceTripleBuffering_DEF\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureOpt_DEF\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureLod_DEF\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TruformMode_DEF\" /t REG_SZ /d \"2\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"LodAdj\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceZBufferDepth_DEF\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation_OPTION_DEF\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"NoOSPowerOptions\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceZBufferDepth\" /t REG_BINARY /d \"3100\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation_DEF\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Main3D\" /t REG_BINARY /d \"3100\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoType\" /t REG_BINARY /d \"32000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisotropyOptimise\" /t REG_BINARY /d \"3100\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TrilinearOptimise\" /t REG_BINARY /d \"3100\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoDegree\" /t REG_BINARY /d \"3400\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureLod\" /t REG_BINARY /d \"31000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureOpt\" /t REG_BINARY /d \"31000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TruformMode_NA\" /t REG_BINARY /d \"3200\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation_OPTION\" /t REG_BINARY /d \"3200\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation\" /t REG_BINARY /d \"3100\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Main3D_SET\" /t REG_BINARY /d \"302031203220332034203500\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceZBufferDepth_SET\" /t REG_BINARY /d \"3020313620323400\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"FlipQueueSize\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"SurfaceFormatReplacements\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TFQ\" /t REG_BINARY /d \"3200\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TFQ_DEF\" /t REG_SZ /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ZFormats_NA\" /t REG_BINARY /d \"3100\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AntiStuttering\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TurboSync\" /t REG_BINARY /d \"3000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"HighQualityAF\" /t REG_BINARY /d \"3300\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ShaderCache\" /t REG_BINARY /d \"3200\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\ControlSet001\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"MLF\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"EQAA\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"PowerState\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AreaAniso_DEF\" /t REG_SZ /d \"8\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"SurfaceFormatReplacements_DEF\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Main3D_DEF\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoType_DEF\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoDegree_DEF\" /t REG_SZ /d \"4\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceTripleBuffering\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceTripleBuffering_DEF\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureOpt_DEF\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureLod_DEF\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TruformMode_DEF\" /t REG_SZ /d \"2\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"LodAdj\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceZBufferDepth_DEF\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation_OPTION_DEF\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"NoOSPowerOptions\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceZBufferDepth\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation_DEF\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Main3D\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoType\" /t REG_BINARY /d \"32000000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisotropyOptimise\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TrilinearOptimise\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AnisoDegree\" /t REG_BINARY /d \"3400\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureLod\" /t REG_BINARY /d \"31000000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TextureOpt\" /t REG_BINARY /d \"31000000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TruformMode_NA\" /t REG_BINARY /d \"3200\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation_OPTION\" /t REG_BINARY /d \"3200\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Tessellation\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"Main3D_SET\" /t REG_BINARY /d \"302031203220332034203500\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ForceZBufferDepth_SET\" /t REG_BINARY /d \"3020313620323400\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"FlipQueueSize\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"SurfaceFormatReplacements\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TFQ\" /t REG_BINARY /d \"3200\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TFQ_DEF\" /t REG_SZ /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ZFormats_NA\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"AntiStuttering\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"TurboSync\" /t REG_BINARY /d \"3000\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"HighQualityAF\" /t REG_BINARY /d \"3300\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"ShaderCache\" /t REG_BINARY /d \"3200\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\ControlSet001\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"QosManagesIdleProcessors\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DesktopStereoShortcuts\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"FeatureControl\" /t REG_DWORD /d \"4\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"NVDeviceSupportKFilter\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmCacheLoc\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmDisableInst2Sys\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmFbsrPagedDMA\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmProfilingAdminOnly\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"TCCSupported\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"TrackResetEngine\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"UseBestResolution\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"ValidateBlitSubRects\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DesktopStereoShortcuts\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"FeatureControl\" /t REG_DWORD /d \"4\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"NVDeviceSupportKFilter\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmCacheLoc\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmDisableInst2Sys\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmFbsrPagedDMA\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmProfilingAdminOnly\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"TCCSupported\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"TrackResetEngine\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"UseBestResolution\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"ValidateBlitSubRects\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"CsEnabled\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"PerfCalculateActualUtilization\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"EventProcessorEnabled\" /t REG_DWORD /d \"0\" /f")
@@ -1803,14 +1910,22 @@ def apply_all():
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"MonitorLatencyTolerance\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"MonitorRefreshLatencyTolerance\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\" /v \"TransitionLatency\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablePreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"ComputePreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableAsyncMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableSCGMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PerfAnalyzeMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidGfxPreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableCEPreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablePreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"ComputePreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableAsyncMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableSCGMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PerfAnalyzeMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidGfxPreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableMidBufferPreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableCEPreemption\" /t REG_DWORD /d \"0\" /f")
     run("reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%a\\Device Parameters\\WDF\" /v IdleInWorkingState /t REG_DWORD /d 0 /f")
     run("reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%s\\Device Parameters\" /v AllowIdleIrpInD3 /t REG_DWORD /d 0 /f")
     run("reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%s\\Device Parameters\\WDF\" /v IdleInWorkingState /t REG_DWORD /d 0 /f")
@@ -2000,58 +2115,99 @@ def apply_all():
     run("REG ADD \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize\" /v \"StartupDelayInMSec\" /t REG_DWORD /d 0 /f")
     run("REG ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization\" /v \"NoLockScreen\" /t REG_DWORD /d 1 /f")
     run("REG ADD \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings\" /v \"IsDynamicSearchBoxEnabled\" /t REG_DWORD /d 0 /f")
-    run("REG ADD \"HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}\" /v \"System.IsPinnedToNameSpaceTree\" /t REG_DWORD /d 0 /f")
+    run(
+        "REG ADD \"HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}\" /v \"System.IsPinnedToNameSpaceTree\" /t REG_DWORD /d 0 /f")
     run("REG ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\FileHistory\" /v \"Disabled\" /t REG_DWORD /d 1 /f")
     run("REG ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\PolicyManager\\default\\System\\TurnOffFileHistory\" /v \"value\" /t REG_DWORD /d 1 /f")
-    run("REG ADD \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{36fc9e60-c465-11cf-8056-444553540000}\\000%%i\" /v \"IdleEnable\" /t REG_DWORD /d 0 /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1fb2a002-4c6c-4de7-85c2-cb8db9a4f728}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{7988B571-EC89-11cf-9C00-00AA00A14F56}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{7988B573-EC89-11cf-9C00-00AA00A14F56}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1fb2a002-4c6c-4de7-85c2-cb8db9a4f728}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7988B571-EC89-11cf-9C00-00AA00A14F56}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7988B573-EC89-11cf-9C00-00AA00A14F56}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{BB0DB60E-FFA0-4756-9F04-A0FCE6A97809}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{BBD5AFE4-1417-40f7-94B3-A10719535CB4}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{4D728E35-16FA-4320-9E8B-BFD7100A8846}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{614C2902-8C8F-4D8F-90A2-FB9017B19FF9}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{6A5FEA5B-BF8F-4EE5-B8C3-44D8A0D7331C}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{A4F2A5C9-979A-4EC6-851F-341F15D3F67D}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{B164BCEE-41B3-4F70-A53C-2ACA322DCCCB}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{98859A6C-02F2-43FC-ADB0-CE6D10F1A1AA}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{C5388469-F816-40D2-9E6B-D6C68986996E}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7AA809F6-C072-11DF-AC23-18A90531A85A}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7AA809F7-C072-11DF-AC23-18A90531A85A}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7AA809F8-C072-11DF-AC23-18A90531A85A}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{E49F7E50-C070-11DF-AC23-18A90531A85A}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{168F4281-EC0D-46D3-951D-FBCB2F7C9079}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{90511715-D0AD-4DAA-A18B-254BD3AE1CF2}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{A7AA4814-7479-4047-BC99-32E757C8B850}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{59C88A5A-702B-4DAB-9FBE-F53140BA899B}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{B5A123C0-3893-4F1C-8599-00F4B82F2C99}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0F563B5F-8EE2-4516-BA0A-544DE058C75B}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
-    run("REG DELETE \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
+    run(
+        "REG ADD \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{36fc9e60-c465-11cf-8056-444553540000}\\000%%i\" /v \"IdleEnable\" /t REG_DWORD /d 0 /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1fb2a002-4c6c-4de7-85c2-cb8db9a4f728}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{7988B571-EC89-11cf-9C00-00AA00A14F56}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{7988B573-EC89-11cf-9C00-00AA00A14F56}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1fb2a002-4c6c-4de7-85c2-cb8db9a4f728}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7988B571-EC89-11cf-9C00-00AA00A14F56}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7988B573-EC89-11cf-9C00-00AA00A14F56}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{BB0DB60E-FFA0-4756-9F04-A0FCE6A97809}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{BBD5AFE4-1417-40f7-94B3-A10719535CB4}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{4D728E35-16FA-4320-9E8B-BFD7100A8846}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{614C2902-8C8F-4D8F-90A2-FB9017B19FF9}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{6A5FEA5B-BF8F-4EE5-B8C3-44D8A0D7331C}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{A4F2A5C9-979A-4EC6-851F-341F15D3F67D}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{B164BCEE-41B3-4F70-A53C-2ACA322DCCCB}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{98859A6C-02F2-43FC-ADB0-CE6D10F1A1AA}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{C5388469-F816-40D2-9E6B-D6C68986996E}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7AA809F6-C072-11DF-AC23-18A90531A85A}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7AA809F7-C072-11DF-AC23-18A90531A85A}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{7AA809F8-C072-11DF-AC23-18A90531A85A}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{E49F7E50-C070-11DF-AC23-18A90531A85A}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{168F4281-EC0D-46D3-951D-FBCB2F7C9079}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{90511715-D0AD-4DAA-A18B-254BD3AE1CF2}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{A7AA4814-7479-4047-BC99-32E757C8B850}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{59C88A5A-702B-4DAB-9FBE-F53140BA899B}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{B5A123C0-3893-4F1C-8599-00F4B82F2C99}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0F563B5F-8EE2-4516-BA0A-544DE058C75B}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
+    run(
+        "REG DELETE \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.CscWorkOfflineOnline\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.CscSync\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{0F563B5F-8EE2-4516-BA0A-544DE058C75B}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{0F563B5F-8EE2-4516-BA0A-544DE058C75B}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{0F563B5F-8EE2-4516-BA0A-544DE058C75B}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{0F563B5F-8EE2-4516-BA0A-544DE058C75B}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{2F6CE85C-F9EE-43CA-90C7-8A9BD53A2467}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ControlPanel\\NameSpace\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ControlPanel\\NameSpace\\{F6B6E965-E9B2-444B-9286-10C9152EDBC5}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace_41040327\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\DeviceUpdateLocations\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.RibbonSync.WorkOfflineOnline\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.RibbonSync.SyncThisFolder\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.RibbonSync.MakeAvailableOffline\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\FileHistory\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\ms-meetnow\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\ms-meetnowflyout\" /f")
     run("REG DELETE \"HKEY_CURRENT_USER\\Software\\Classes\\ms-meetnow\" /f")
@@ -2068,119 +2224,214 @@ def apply_all():
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\SharedRealitySvc\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\spectrum\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\SpatialGraphFilter\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\RetailDemo\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\AppXjj5q94522tr3azgc4pv1grpyk9t831ve\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1e46246f-b2ad-4a86-9e08-d0f9e01ee05d}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{61f77d5e-afe9-400b-a5e6-e9e80fc8e601}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{94FBC195-CB86-4142-9A6A-8E9CCF0D4F4D}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1e46246f-b2ad-4a86-9e08-d0f9e01ee05d}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{61f77d5e-afe9-400b-a5e6-e9e80fc8e601}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{94FBC195-CB86-4142-9A6A-8E9CCF0D4F4D}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\ms-retaildemo-launchbioenrollment\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\ms-retaildemo-launchstart\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{1e46246f-b2ad-4a86-9e08-d0f9e01ee05d}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{61f77d5e-afe9-400b-a5e6-e9e80fc8e601}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{94FBC195-CB86-4142-9A6A-8E9CCF0D4F4D}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{1e46246f-b2ad-4a86-9e08-d0f9e01ee05d}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{61f77d5e-afe9-400b-a5e6-e9e80fc8e601}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{94FBC195-CB86-4142-9A6A-8E9CCF0D4F4D}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\ms-retaildemo-launchstart\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\ms-retaildemo-launchbioenrollment\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{ac793c1d-eb2f-4ffd-b1ec-7af1aaaf3325}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{C2EA2356-994C-45AF-BDAE-10796F73BC47}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{FB046C65-10C7-4994-ABE4-E3F7FD710B2E}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{15D8726E-26CE-495A-817E-3AD7B022FCFA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{1FD12909-E6DD-4983-A4C6-50B395961110}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{8ba5a5ed-e0c5-4ce6-a1e8-9263e099746f}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\Interface\\{faedbd4d-20b6-43a9-b67c-577127c8d12b}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\ProtocolExecute\\ms-retaildemo-launchbioenrollment\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\ProtocolExecute\\ms-retaildemo-launchstart\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FolderDescriptions\\{12D4C69E-24AD-4923-BE19-31321C43A767}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FolderDescriptions\\{12D4C69E-24AD-4923-BE19-31321C43A767}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VolumeCaches\\RetailDemo Offline Content\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\RetailDemo.Internal.RetailDemoSetup\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\RetailDemo.Internal.RetailInfoSetter\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\RetailDemo.Internal.WindowsHelloHelper\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\CloudExperienceHostBroker.RetailDemo.ConfigureRetailDemo\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{119b14a0-eb11-40c7-9a3c-e6a8904827d2}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1a9ca6d5-2488-46b1-b439-218f2314a059}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{A5890610-900C-4115-BAFF-767E05E10F1F}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{CD607C8B-17CA-4D2E-BA26-B748553BB0B2}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{DE8DEA9C-CC35-4A6E-8A17-F0C611F249A4}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{EBB236B1-F57F-480D-9DE9-B15A87298EEC}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{119b14a0-eb11-40c7-9a3c-e6a8904827d2}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1a9ca6d5-2488-46b1-b439-218f2314a059}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{A5890610-900C-4115-BAFF-767E05E10F1F}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{CD607C8B-17CA-4D2E-BA26-B748553BB0B2}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{DE8DEA9C-CC35-4A6E-8A17-F0C611F249A4}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{EBB236B1-F57F-480D-9DE9-B15A87298EEC}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{AAEC1DAE-CC06-4DA4-B762-56A76FD4B2FF}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{0DEE55E7-1157-4FBD-865E-80D4E151DD74}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{75185BE8-64A9-4E35-9B42-EA422CB7D854}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{445AB715-5154-42F6-9DAF-71C05428DF4E}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{76192C2C-2F55-45DF-B1BF-2ADA479F399C}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{8201C8D6-A9A9-41EA-877D-6D29FEE52732}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{8E17139B-5D9A-4EE3-96A1-F9455D55ED34}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{A03D1421-B1EC-11D0-8C3A-00C04FC31D2F}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{B6A55658-AD62-4133-A1D7-C9073361763B}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{BB328424-067F-45AF-8485-C7389ED64A54}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{BED46A0F-EFF2-4EA3-A201-337BE6828F42}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{D5FE7E1F-7473-4D6E-8BD5-3F72B1DB02BE}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{DCABF59E-AF88-41D5-92E8-905680968039}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{F2CC526B-08C7-4E0E-BA62-74A53C4AB446}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{AAEC1DAE-CC06-4DA4-B762-56A76FD4B2FF}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{0DEE55E7-1157-4FBD-865E-80D4E151DD74}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{445AB715-5154-42F6-9DAF-71C05428DF4E}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{75185BE8-64A9-4E35-9B42-EA422CB7D854}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{76192C2C-2F55-45DF-B1BF-2ADA479F399C}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{8201C8D6-A9A9-41EA-877D-6D29FEE52732}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{8E17139B-5D9A-4EE3-96A1-F9455D55ED34}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{A03D1421-B1EC-11D0-8C3A-00C04FC31D2F}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{B6A55658-AD62-4133-A1D7-C9073361763B}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{BB328424-067F-45AF-8485-C7389ED64A54}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{BED46A0F-EFF2-4EA3-A201-337BE6828F42}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{D5FE7E1F-7473-4D6E-8BD5-3F72B1DB02BE}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{DCABF59E-AF88-41D5-92E8-905680968039}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{F2CC526B-08C7-4E0E-BA62-74A53C4AB446}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{119b14a0-eb11-40c7-9a3c-e6a8904827d2}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1a9ca6d5-2488-46b1-b439-218f2314a059}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{A5890610-900C-4115-BAFF-767E05E10F1F}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{CD607C8B-17CA-4D2E-BA26-B748553BB0B2}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{DE8DEA9C-CC35-4A6E-8A17-F0C611F249A4}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{EBB236B1-F57F-480D-9DE9-B15A87298EEC}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{0886dae5-13ba-49d6-a6ef-d0922e502d96}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{119b14a0-eb11-40c7-9a3c-e6a8904827d2}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1a9ca6d5-2488-46b1-b439-218f2314a059}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{A5890610-900C-4115-BAFF-767E05E10F1F}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{CD607C8B-17CA-4D2E-BA26-B748553BB0B2}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{DE8DEA9C-CC35-4A6E-8A17-F0C611F249A4}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{EBB236B1-F57F-480D-9DE9-B15A87298EEC}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{AAEC1DAE-CC06-4DA4-B762-56A76FD4B2FF}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{0DEE55E7-1157-4FBD-865E-80D4E151DD74}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{75185BE8-64A9-4E35-9B42-EA422CB7D854}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{445AB715-5154-42F6-9DAF-71C05428DF4E}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{76192C2C-2F55-45DF-B1BF-2ADA479F399C}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{8201C8D6-A9A9-41EA-877D-6D29FEE52732}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{8E17139B-5D9A-4EE3-96A1-F9455D55ED34}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{A03D1421-B1EC-11D0-8C3A-00C04FC31D2F}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{B6A55658-AD62-4133-A1D7-C9073361763B}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{BB328424-067F-45AF-8485-C7389ED64A54}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{BED46A0F-EFF2-4EA3-A201-337BE6828F42}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{D5FE7E1F-7473-4D6E-8BD5-3F72B1DB02BE}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{DCABF59E-AF88-41D5-92E8-905680968039}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\Interface\\{F2CC526B-08C7-4E0E-BA62-74A53C4AB446}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{AAEC1DAE-CC06-4DA4-B762-56A76FD4B2FF}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{0DEE55E7-1157-4FBD-865E-80D4E151DD74}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{445AB715-5154-42F6-9DAF-71C05428DF4E}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{75185BE8-64A9-4E35-9B42-EA422CB7D854}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{76192C2C-2F55-45DF-B1BF-2ADA479F399C}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{8201C8D6-A9A9-41EA-877D-6D29FEE52732}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{8E17139B-5D9A-4EE3-96A1-F9455D55ED34}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{A03D1421-B1EC-11D0-8C3A-00C04FC31D2F}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{B6A55658-AD62-4133-A1D7-C9073361763B}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{BB328424-067F-45AF-8485-C7389ED64A54}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{BED46A0F-EFF2-4EA3-A201-337BE6828F42}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{D5FE7E1F-7473-4D6E-8BD5-3F72B1DB02BE}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{DCABF59E-AF88-41D5-92E8-905680968039}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Interface\\{F2CC526B-08C7-4E0E-BA62-74A53C4AB446}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\OCHelper.BrowserHelper\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\OCHelper.BrowserHelper.1\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\AppVMachineRegistryStore\\Integration\\Ownership\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\SKYPESERVER.EXE\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\CLSID\\{AAEC1DAE-CC06-4DA4-B762-56A76FD4B2FF}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\CLSID\\{AAEC1DAE-CC06-4DA4-B762-56A76FD4B2FF}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\OCHelper.BrowserHelper\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\OCHelper.BrowserHelper.1\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\Wow6432Node\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions\\{789FE86F-6FC4-46A1-9849-EDE0DB0C95CA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions\\{2670000A-7350-4f3c-8081-5663EE0C6C49}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Classes\\Wow6432Node\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions\\{789FE86F-6FC4-46A1-9849-EDE0DB0C95CA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions\\{2670000A-7350-4f3c-8081-5663EE0C6C49}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\SKYPESERVER.EXE\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\Capabilities\\microphone\\Apps\\Microsoft.Windows.PPISkype_cw5n1h2txyewy\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\Capabilities\\microphone\\Apps\\WhatsNew_cw5n1h2txyewy\" /f")
@@ -2190,11 +2441,16 @@ def apply_all():
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Microsoft.MessagingSkype_8wekyb3d8bbweSkypeVideo\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Microsoft.MessagingSkype_8wekyb3d8bbwex27e26f40ye031y48a6yb130yd1f20388991ax\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SideBySide\\Winners\\amd64_microsoft-windows-skype-ortc_31bf3856ad364e35_none_e1fa6582c679b1b3\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Classes\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Classes\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Internet Explorer\\Extension Compatibility\\{22BF413B-C6D2-4D91-82A9-A0F997BA588C}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Internet Explorer\\Extension Compatibility\\{77BF5300-1474-4EC7-9980-D32B190E9B07}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Internet Explorer\\Extension Compatibility\\{AE805869-2E5C-4ED4-8F7B-F1F7851A4497}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Classes\\CLSID\\{31D09BA0-12F5-4CCE-BE8A-2923E76605DA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Classes\\TypeLib\\{F1CBBA3D-683A-4612-97EB-AF035E3B6218}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Internet Explorer\\Extension Compatibility\\{22BF413B-C6D2-4D91-82A9-A0F997BA588C}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Internet Explorer\\Extension Compatibility\\{77BF5300-1474-4EC7-9980-D32B190E9B07}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Internet Explorer\\Extension Compatibility\\{AE805869-2E5C-4ED4-8F7B-F1F7851A4497}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\App Paths\\SKYPESERVER.EXE\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Enum\\ROOT\\IMAGE\\0000\\Device Parameters\\Processes\\skype.exe\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\TroubleshootingSvc\" /f")
@@ -2218,50 +2474,89 @@ def apply_all():
     run("REG DELETE \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\ms-stickereditor\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\DesktopBackground\\Shell\\EditStickers\" /f")
     run("REG DELETE \"HKEY_CLASSES_ROOT\\DesktopBackground\\Shell\\ShowDesktopSearch\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{1677ABA1-4346-442F-A74A-D8B9A713B964}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\Server\\BcastDVRUserService\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{817F98C4-C9D9-4B8F-B8D0-413C8E5DBBB7}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{053C9CB8-5BA1-4F47-A6F1-D1D748C7DA93}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{817F98C4-C9D9-4B8F-B8D0-413C8E5DBBB7}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.fax\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.fax\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0b6d74fe-ad29-4c92-ac06-f06bc2f238a7}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{34e6abfe-e9f4-4ddf-895a-7350e198f26e}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{a7c922a0-a197-4ae4-8fcd-2236bb4cf515}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{F4D36777-EAED-4cc5-9FE7-827BE5190B20}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{faeb54c4-f66f-4806-83a0-805299f5e3ad}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{FE6B11C3-C72E-4061-86C6-9D163121F229}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{0b6d74fe-ad29-4c92-ac06-f06bc2f238a7}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{34e6abfe-e9f4-4ddf-895a-7350e198f26e}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{a7c922a0-a197-4ae4-8fcd-2236bb4cf515}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{F4D36777-EAED-4cc5-9FE7-827BE5190B20}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{faeb54c4-f66f-4806-83a0-805299f5e3ad}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{FE6B11C3-C72E-4061-86C6-9D163121F229}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0b6d74fe-ad29-4c92-ac06-f06bc2f238a7}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{34e6abfe-e9f4-4ddf-895a-7350e198f26e}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{a7c922a0-a197-4ae4-8fcd-2236bb4cf515}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{F4D36777-EAED-4cc5-9FE7-827BE5190B20}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{faeb54c4-f66f-4806-83a0-805299f5e3ad}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{FE6B11C3-C72E-4061-86C6-9D163121F229}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{0b6d74fe-ad29-4c92-ac06-f06bc2f238a7}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{34e6abfe-e9f4-4ddf-895a-7350e198f26e}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{a7c922a0-a197-4ae4-8fcd-2236bb4cf515}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{F4D36777-EAED-4cc5-9FE7-827BE5190B20}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{faeb54c4-f66f-4806-83a0-805299f5e3ad}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{FE6B11C3-C72E-4061-86C6-9D163121F229}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Microsoft.FeedsManager\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{9CDCD9C9-BC40-41C6-89C5-230466DB0BD0}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{9CDCD9C9-BC40-41C6-89C5-230466DB0BD0}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_FEEDS\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{9CDCD9C9-BC40-41C6-89C5-230466DB0BD0}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{4C6470A6-3F91-4f41-850B-DB9BCD074537}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{55b70dec-4b3b-4e26-ae9c-9e8d131843a1}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{C8059EB6-D2FC-4ecf-A15F-AF427F5E4DB6}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0316BBC2-92D9-4E2E-8345-3609C6B5C167}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{56D04F5D-964F-4DBF-8D23-B97989E53418}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{7D868ACD-1A5D-4A47-A247-F39741353012}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{D7CA032C-B7D0-429E-9FD7-82241C356B4A}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{56D04F5D-964F-4DBF-8D23-B97989E53418}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{7D868ACD-1A5D-4A47-A247-F39741353012}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{D7CA032C-B7D0-429E-9FD7-82241C356B4A}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{9CDCD9C9-BC40-41C6-89C5-230466DB0BD0}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{4C6470A6-3F91-4f41-850B-DB9BCD074537}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{55b70dec-4b3b-4e26-ae9c-9e8d131843a1}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{C8059EB6-D2FC-4ecf-A15F-AF427F5E4DB6}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{0316BBC2-92D9-4E2E-8345-3609C6B5C167}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{56D04F5D-964F-4DBF-8D23-B97989E53418}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{7D868ACD-1A5D-4A47-A247-F39741353012}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{D7CA032C-B7D0-429E-9FD7-82241C356B4A}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{56D04F5D-964F-4DBF-8D23-B97989E53418}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{7D868ACD-1A5D-4A47-A247-F39741353012}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{D7CA032C-B7D0-429E-9FD7-82241C356B4A}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\Windows.ApplicationModel.SocialInfo.SocialFeedChildItem\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\Windows.ApplicationModel.SocialInfo.SocialFeedItem\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\Windows.ApplicationModel.SocialInfo.SocialFeedSharedItem\" /f")
@@ -2270,27 +2565,45 @@ def apply_all():
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\WellKnownContracts\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Lock Screen\\FeedManager\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Lock Screen\\FeedManager\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{3E73C6F7-8937-4C07-85D9-D4447A4BE072}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{3E73C6F7-8937-4C07-85D9-D4447A4BE072}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{3E73C6F7-8937-4C07-85D9-D4447A4BE072}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{3E73C6F7-8937-4C07-85D9-D4447A4BE072}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\GameOverlay\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\GameOverlay\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\WindowsUdk.Gaming.UI.GameMru\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{8cec5857-07a1-11d9-b15e-000d56bfe6ee}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{8cec58e7-07a1-11d9-b15e-000d56bfe6ee}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{8cec5857-07a1-11d9-b15e-000d56bfe6ee}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{E5B8E079-EE6D-4E33-A438-C87F2E959254}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{B9033E87-33CF-4D77-BC9B-895AFBBA72E4}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{B9033E87-33CF-4D77-BC9B-895AFBBA72E4}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{9885AEF2-BD9F-41E0-B15E-B3141395E803}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{9885AEF2-BD9F-41E0-B15E-B3141395E803}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{27016870-8E02-11D1-924E-00C04FBBBFB3}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{754A73E3-B0A5-4305-A45A-428186716507}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{EB521D7D-4095-4E61-88FB-BF25700F142A}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{241D7C96-F8BF-4F85-B01F-E2B043341A4B}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{27016870-8E02-11D1-924E-00C04FBBBFB3}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{754A73E3-B0A5-4305-A45A-428186716507}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{EB521D7D-4095-4E61-88FB-BF25700F142A}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{241D7C96-F8BF-4F85-B01F-E2B043341A4B}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\TypeLib\\{8cec5857-07a1-11d9-b15e-000d56bfe6ee}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{8cec58e7-07a1-11d9-b15e-000d56bfe6ee}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\TypeLib\\{8cec5857-07a1-11d9-b15e-000d56bfe6ee}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{E5B8E079-EE6D-4E33-A438-C87F2E959254}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{B9033E87-33CF-4D77-BC9B-895AFBBA72E4}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{B9033E87-33CF-4D77-BC9B-895AFBBA72E4}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{9885AEF2-BD9F-41E0-B15E-B3141395E803}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{9885AEF2-BD9F-41E0-B15E-B3141395E803}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{27016870-8E02-11D1-924E-00C04FBBBFB3}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{754A73E3-B0A5-4305-A45A-428186716507}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{EB521D7D-4095-4E61-88FB-BF25700F142A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{241D7C96-F8BF-4F85-B01F-E2B043341A4B}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{27016870-8E02-11D1-924E-00C04FBBBFB3}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{754A73E3-B0A5-4305-A45A-428186716507}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{EB521D7D-4095-4E61-88FB-BF25700F142A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{241D7C96-F8BF-4F85-B01F-E2B043341A4B}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\MSHelp.hxa.2.5\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\MSHelp.hxc.2.5\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\MSHelp.hxd.2.5\" /f")
@@ -2310,16 +2623,24 @@ def apply_all():
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\HelpAndSupport\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Hints\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.help\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{9127081a-04b5-4044-b4c5-c7a9718e8795}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{9127081a-04b5-4044-b4c5-c7a9718e8795}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CommandStore\\shell\\Windows.help\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{9127081a-04b5-4044-b4c5-c7a9718e8795}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{06946266-393A-456E-92BC-91DDDBF6893C}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{07DC68FA-A15D-4E44-93DE-645060C7B469}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{06946266-393A-456E-92BC-91DDDBF6893C}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{07DC68FA-A15D-4E44-93DE-645060C7B469}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{9127081a-04b5-4044-b4c5-c7a9718e8795}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{06946266-393A-456E-92BC-91DDDBF6893C}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{07DC68FA-A15D-4E44-93DE-645060C7B469}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{06946266-393A-456E-92BC-91DDDBF6893C}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\CLSID\\{07DC68FA-A15D-4E44-93DE-645060C7B469}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\Maps\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{2409B88C-473B-428B-8795-4C32D7822C9F}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{C9D09D2D-8C0A-4A0F-A699-4125AD19EF9C}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{2409B88C-473B-428B-8795-4C32D7822C9F}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{C9D09D2D-8C0A-4A0F-A699-4125AD19EF9C}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Auto_Update_Setting\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_CopyrightAttribution\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_DeleteAll\" /f")
@@ -2332,67 +2653,113 @@ def apply_all():
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Updates_Actions\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Updates_State_Installing\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Maps_Wifi_Only_Setting\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{5C03E1B1-EB13-4DF1-8943-2FE8E7D5F309}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{5C03E1B1-EB13-4DF1-8943-2FE8E7D5F309}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{74F6069B-3D81-479E-AA67-42CE80F16799}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{74F6069B-3D81-479E-AA67-42CE80F16799}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{74F6069B-3D81-479E-AA67-42CE80F16799}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\AppID\\{5C03E1B1-EB13-4DF1-8943-2FE8E7D5F309}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\AppID\\{5C03E1B1-EB13-4DF1-8943-2FE8E7D5F309}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{74F6069B-3D81-479E-AA67-42CE80F16799}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{74F6069B-3D81-479E-AA67-42CE80F16799}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{74F6069B-3D81-479E-AA67-42CE80F16799}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WpcMonSvc\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\WacomPen\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\PenService\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\RemoteApp and Desktop Connections Update\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\RemoteAssistance\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{A3BC03A0-041D-42E3-AD22-882B7865C9C5}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{115e13cf-cfe8-4821-b0da-e06aa4d51426}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1B462D7B-72D8-4544-ACC1-D84E5B9A8A14}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1DF7C823-B2D4-4B54-975A-F2AC5D7CF8B8}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{22A7E88C-5BF5-4DE6-B687-60F7331DF190}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{301B94BA-5D25-4A12-BFFE-3B6E7A616585}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{32be5ed2-5c86-480f-a914-0ff8885a1b3f}\" /f")
-    run("REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{3523c2fb-4031-44e4-9a3b-f1e94986ee7f}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Logon\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Plain\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{A3BC03A0-041D-42E3-AD22-882B7865C9C5}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{115e13cf-cfe8-4821-b0da-e06aa4d51426}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1B462D7B-72D8-4544-ACC1-D84E5B9A8A14}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{1DF7C823-B2D4-4B54-975A-F2AC5D7CF8B8}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{22A7E88C-5BF5-4DE6-B687-60F7331DF190}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{301B94BA-5D25-4A12-BFFE-3B6E7A616585}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{32be5ed2-5c86-480f-a914-0ff8885a1b3f}\" /f")
+    run(
+        "REG DELETE \"HKEY_CLASSES_ROOT\\WOW6432Node\\CLSID\\{3523c2fb-4031-44e4-9a3b-f1e94986ee7f}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\WebCheck\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WebCheck\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{6de5dc63-3c0c-4dda-9220-1028a37298ba}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{c1f85ef8-bcc2-4606-bb39-70c523715eb3}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{C424F25A-6774-48BC-9F1E-02CCA8C1BE62}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{C58C4893-3BE0-4B45-ABB5-A63E4B8C8651}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{6de5dc63-3c0c-4dda-9220-1028a37298ba}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{c1f85ef8-bcc2-4606-bb39-70c523715eb3}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{C424F25A-6774-48BC-9F1E-02CCA8C1BE62}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{C58C4893-3BE0-4B45-ABB5-A63E4B8C8651}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{58E3C745-D971-4081-9034-86E34B30836A}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{58E3C745-D971-4081-9034-86E34B30836A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\AppID\\{6de5dc63-3c0c-4dda-9220-1028a37298ba}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{c1f85ef8-bcc2-4606-bb39-70c523715eb3}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{C424F25A-6774-48BC-9F1E-02CCA8C1BE62}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{C58C4893-3BE0-4B45-ABB5-A63E4B8C8651}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\AppID\\{6de5dc63-3c0c-4dda-9220-1028a37298ba}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{c1f85ef8-bcc2-4606-bb39-70c523715eb3}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{C424F25A-6774-48BC-9F1E-02CCA8C1BE62}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{C58C4893-3BE0-4B45-ABB5-A63E4B8C8651}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{58E3C745-D971-4081-9034-86E34B30836A}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\{58E3C745-D971-4081-9034-86E34B30836A}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\Device Setup\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\DeviceDirectoryClient\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\Device Information\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\Feedback\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\WDI\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\Servicing\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{4C5BCB25-2C1D-40F3-A779-FDE6280DB867}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{4C5BCB25-2C1D-40F3-A779-FDE6280DB867}\" /f")
     run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\Microsoft\\Windows\\Management\\Provisioning\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{0E511F8F-D1BF-49C8-B1B9-A6C784A17EDA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{1D3D9B10-30A4-459E-8B32-248CAD0EB7EF}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{3EFB737D-965A-4364-8CBA-CCDA345B1C71}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{76300FA9-9EB5-4A2C-8087-029276F64728}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{825F76D6-EA34-4133-BF96-B416888766A3}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{8D567D13-E3B8-4273-84F4-C743E60872CC}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{BAE9F0C3-0DB3-494E-BC0B-42703170C272}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{C6D0FF06-5886-4924-93EB-851D6F3CBD06}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{81272F44-D745-4699-8216-955865606EAC}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{9FFC9FC7-ACE3-434F-A78C-43BBD0C1B871}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{8B551B42-E746-49C9-A6F3-D9B988AE0914}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{BE7B1C85-5B05-49EE-A887-1F23FF59A1EA}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{68AB1C40-FB5C-490E-9513-733CCED864C1}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{FB9EE28D-D0CA-4B6E-B47A-201C830C7006}\" /f")
-    run("REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{CD3A454B-E619-4AA6-85B5-B2D98ABC43A1}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{0E511F8F-D1BF-49C8-B1B9-A6C784A17EDA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{1D3D9B10-30A4-459E-8B32-248CAD0EB7EF}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{3EFB737D-965A-4364-8CBA-CCDA345B1C71}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{76300FA9-9EB5-4A2C-8087-029276F64728}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{825F76D6-EA34-4133-BF96-B416888766A3}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{8D567D13-E3B8-4273-84F4-C743E60872CC}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{BAE9F0C3-0DB3-494E-BC0B-42703170C272}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{C6D0FF06-5886-4924-93EB-851D6F3CBD06}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{81272F44-D745-4699-8216-955865606EAC}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{9FFC9FC7-ACE3-434F-A78C-43BBD0C1B871}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{8B551B42-E746-49C9-A6F3-D9B988AE0914}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{BE7B1C85-5B05-49EE-A887-1F23FF59A1EA}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{68AB1C40-FB5C-490E-9513-733CCED864C1}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{FB9EE28D-D0CA-4B6E-B47A-201C830C7006}\" /f")
+    run(
+        "REG DELETE \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{CD3A454B-E619-4AA6-85B5-B2D98ABC43A1}\" /f")
     run("reg add \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\" /v \"SystemResponsiveness\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d 0 /f")
+    run(
+        "reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnableUlps\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKEY_CURRENT_USER\\AppEvents\\Schemes\" /v \".Current\" /t REG_SZ /d \".None\" /f")
     run("reg add \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\" /v \"Scheduler Response (ms)\" /t REG_DWORD /d 1 /f")
     run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\" /v \"SystemResponsiveness\" /t REG_DWORD /d \"0\" /f")
@@ -2452,12 +2819,15 @@ def apply_all():
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize\" /v \"EnablingTransparency\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Input\\TIPC\" /v \"Enabled\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Attachments\" /v \"SaveZoneInformation\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\WDI\\{9c5a40da-b965-4fc3-8781-88dd50a6299d}\" /v \"ScenarioExecutionEnabled\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\WDI\\{9c5a40da-b965-4fc3-8781-88dd50a6299d}\" /v \"ScenarioExecutionEnabled\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WUDF\" /v \"LogEnabling\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WUDF\" /v \"LogLevel\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\Credssp\" /v \"DebugLogLevel\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Permissions\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}\" /v \"SensorPermissionState\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}\" /v \"SensorPermissionState\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Permissions\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}\" /v \"SensorPermissionState\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}\" /v \"SensorPermissionState\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WUDF\" /v \"LogEnable\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Siuf\\Rules\" /v \"PeriodInNanoSeconds\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Policies\\Microsoft\\Assistance\\Client\\1.0\" /v \"NoExplicitFeedback\" /t REG_DWORD /d \"1\" /f")
@@ -2469,50 +2839,91 @@ def apply_all():
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Spooler\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("taskkill/im msedge.exe")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search\" /v \"DisablegWebSearch\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PreferSystemMemoryContiguous\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PreferSystemMemoryContiguous\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKLM\\System\\ControlSet001\\Control\\Class\\%%m\" /v \"RMHdcpKeyglobZero\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"D3PCLatency\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"F1TransitionLatency\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"LOWLATENCY\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"Node3DLowLatency\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PciLatencyTimerControl\" /t REG_DWORD /d \"20\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMDeepL1EntryLatencyUsec\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmGspcMaxFtuS\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmGspcMinFtuS\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmGspcPerioduS\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrEiIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrGrIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrGrRgIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrMsIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"VRDirectFlipDPCDelayUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"VRDirectFlipTimingMarginUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"VRDirectJITFlipMsHybridFlipDelayUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"vrrCursorMarginUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"vrrDeflickerMarginUs\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"vrrDeflickerMaxUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"D3PCLatency\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"F1TransitionLatency\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"LOWLATENCY\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"Node3DLowLatency\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PciLatencyTimerControl\" /t REG_DWORD /d \"20\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMDeepL1EntryLatencyUsec\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmGspcMaxFtuS\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmGspcMinFtuS\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RmGspcPerioduS\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrEiIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrGrIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrGrRgIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"RMLpwrMsIdleThresholdUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"VRDirectFlipDPCDelayUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"VRDirectFlipTimingMarginUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"VRDirectJITFlipMsHybridFlipDelayUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"vrrCursorMarginUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"vrrDeflickerMarginUs\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"vrrDeflickerMaxUs\" /t REG_DWORD /d \"1\" /f")
     run("reg delete \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"NvBackend\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\\\DAL2_DATA__2_0\\DisplayPath_4\\EDID_D109_78E9\\Option\" /v \"ProtectionControl\" /t REG_BINARY /d \"0100000001000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"3D_Refresh_Rate_Override_DEF\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowSnapshot\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AAF_NA\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"ASTT_NA\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowSubscription\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AreaAniso_NA\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowRSOverlay\" /t REG_SZ /d \"false\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"Adaptive De-interlacing\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowSkins\" /t REG_SZ /d \"false\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AutoColorDepthReduction_NA\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableUVDPowerGatingDynamic\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableVCEPowerGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingVceSwClockGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingUvdClockGating\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingAspmL0s\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingAspmL1\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingUlps\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingUlps_NA\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_DeLagEnabled\" /t REG_DWORD /d \"1\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_EnableComputePreemption\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"FlipQueueSize\" /t REG_BINARY /d \"3100\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"3D_Refresh_Rate_Override_DEF\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowSnapshot\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AAF_NA\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"ASTT_NA\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowSubscription\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AreaAniso_NA\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowRSOverlay\" /t REG_SZ /d \"false\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"Adaptive De-interlacing\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AllowSkins\" /t REG_SZ /d \"false\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"AutoColorDepthReduction_NA\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableUVDPowerGatingDynamic\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"DisableVCEPowerGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingVceSwClockGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingUvdClockGating\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingAspmL0s\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingAspmL1\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingUlps\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"EnablingUlps_NA\" /t REG_SZ /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_DeLagEnabled\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"KMD_EnableComputePreemption\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\\UMD\" /v \"FlipQueueSize\" /t REG_BINARY /d \"3100\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\amdlog\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%i\\Device Parameters\" /v \"AllowIdleIrpInD3\" /t REG_DWORD /d \"0\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%i\\Device Parameters\" /v \"D3ColdSupported\" /t REG_DWORD /d \"0\" /f")
@@ -2600,7 +3011,8 @@ def apply_all():
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge\" /v \"WalletDonationEnabled\" /t REG_DWORD /d 0 /f")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Device Metadata\" /v \"PreventDeviceMetadataFromNetwork\" /t REG_DWORD /d \"1\" /f")
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\OneDrive\" /v \"DisableMeteredNetworkFileSync\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ThermalAutoThrottlingEnable\" /t REG_DWORD /d \"1\" /f")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ThermalAutoThrottlingEnable\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters\" /v \"CacheHashTableBucketSize\" /t REG_DWORD /d \"00000001\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters\" /v \"CacheHashTableSize\" /t REG_DWORD /d \"00000180\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters\" /v \"NegativeCacheTime\" /t REG_DWORD /d \"00000000\" /f")
@@ -2642,7 +3054,8 @@ def apply_all():
     run("reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters\" /v \"DefaultSendWindow\" /t REG_DWORD /d 65535 /f")
     run("reg add \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched\" /v \"NonBestEffortLimit\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched\" /v \"TimerResolution\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PowerThrottling\" /t REG_DWORD /d 0 /f")
+    run(
+        "reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PowerThrottling\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters\" /v \"DisabledComponents\" /t REG_DWORD /d 255 /f")
     run("reg add \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\" /v \"EnableMulticast\" /t REG_DWORD /d 0 /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device\" /v \"DisableThrottling\" /t REG_DWORD /d \"1\" /f")
@@ -2651,8 +3064,10 @@ def apply_all():
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched\" /v \"TimerResolution\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Psched\" /v \"Start\" /t REG_DWORD /d \"1\" /f")
     run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.WiFiNetworkManager\" /v \"Enabled\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ThermalAutoThrottlingEnabled\" /t REG_DWORD /d \"0\" /f")
-    run("PowerShell -ExecutionPolicy Unrestricted -Command \"$key = \'HKLM:SYSTEM\\CurrentControlSet\\services\\NetBT\\Parameters\\Interfaces\'; Get-ChildItem $key | ForEach {; Set-ItemProperty -Path \\\"$key\\$($_.PSChildName)\\\" -Name NetbiosOptions -Value 2 -Verbose; }\"")
+    run(
+        "Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v \"PP_ThermalAutoThrottlingEnabled\" /t REG_DWORD /d \"0\" /f")
+    run(
+        "PowerShell -ExecutionPolicy Unrestricted -Command \"$key = \'HKLM:SYSTEM\\CurrentControlSet\\services\\NetBT\\Parameters\\Interfaces\'; Get-ChildItem $key | ForEach {; Set-ItemProperty -Path \\\"$key\\$($_.PSChildName)\\\" -Name NetbiosOptions -Value 2 -Verbose; }\"")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\MicrosoftEdgeElevationService\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\edgeupdate\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\edgeupdatem\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
@@ -2763,12 +3178,18 @@ def apply_all():
     run("schtasks /end /tn \"\\Microsoft\\Windows\\Time Synchronization\\SynchronizeTime\"")
     run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\TabletPC\" /v \"DoSvc\" /t REG_DWORD /d \"3\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\PrintNotify\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
-    run("schtasks /change /Disable /tn \"NvTmRep_CrashReport1_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
-    run("schtasks /change /Disable /tn \"NvTmRep_CrashReport2_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
-    run("schtasks /change /Disable /tn \"NvTmRep_CrashReport3_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
-    run("schtasks /change /Disable /tn \"NvTmRep_CrashReport4_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
-    run("schtasks /change /Disable /tn \"NvDriverUpdateCheckDaily_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
-    run("schtasks /change /Disable /tn \"NvTmMon_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
+    run(
+        "schtasks /change /Disable /tn \"NvTmRep_CrashReport1_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
+    run(
+        "schtasks /change /Disable /tn \"NvTmRep_CrashReport2_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
+    run(
+        "schtasks /change /Disable /tn \"NvTmRep_CrashReport3_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
+    run(
+        "schtasks /change /Disable /tn \"NvTmRep_CrashReport4_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
+    run(
+        "schtasks /change /Disable /tn \"NvDriverUpdateCheckDaily_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
+    run(
+        "schtasks /change /Disable /tn \"NvTmMon_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\"")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\FontCache\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\FontCache3.0.0.0\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
     run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stisvc\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
@@ -2781,9 +3202,9 @@ def apply_all():
     run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search\" /v \"AllowSearchToUseLocation\" /t REG_DWORD /d 0 /f")
 
 
-
 def get_backup_data():
     return {'backup_created': True}
+
 
 def restore_from_backup(backup_data):
     if not backup_data:

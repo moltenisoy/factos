@@ -2,11 +2,18 @@ import subprocess
 import os
 import sys
 
+
 def run(cmd):
     try:
-        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False)
     except Exception:
         pass
+
 
 def apply_network():
     """Optimizaciones de red: TCP/IP, DNS, firewall y configuraciones de red"""
@@ -43,7 +50,7 @@ def apply_network():
     run("netsh int tcp set global ackdelay=0")
     run("netsh int tcp set global ecncapability=disabled")
     run("netsh interface teredo set state disabled")
-    
+
     # Registry TCP/IP settings
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"LocalPriority\" /t REG_DWORD /d \"4\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"HostsPriority\" /t REG_DWORD /d \"5\" /f")
@@ -76,7 +83,7 @@ def apply_network():
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpCreateAndConnectTcbRateLimitDepth\" /t REG_DWORD /d \"00000000\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"IPAutoconfigurationEnabled\" /t REG_DWORD /d \"00000000\" /f")
     run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"DefaultTTL\" /t REG_DWORD /d \"38\" /f")
-    
+
     # Network adapter optimizations
     run("Reg.exe add \"%%n\" /v \"AdvancedEEE\" /t REG_SZ /d \"0\" /f")
     run("Reg.exe add \"%%n\" /v \"*EEE\" /t REG_SZ /d \"0\" /f")
@@ -87,7 +94,7 @@ def apply_network():
     run("Reg.exe add \"%%n\" /v \"JumboPacket\" /t REG_SZ /d \"1514\" /f")
     run("Reg.exe add \"%%n\" /v \"TransmitBuffers\" /t REG_SZ /d \"2048\" /f")
     run("Reg.exe add \"%%n\" /v \"ReceiveBuffers\" /t REG_SZ /d \"1024\" /f")
-    
+
     # Network services
     run("sc config \"Wcmsvc\" start=disabled")
     run("sc config \"NcaSvc\" start=demand")
