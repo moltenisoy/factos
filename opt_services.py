@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from backup_mgr_comprehensive import create_comprehensive_backup, restore_from_comprehensive_backup
 
 
 def run(cmd):
@@ -20,123 +21,418 @@ def apply_services():
     if os.name != "nt":
         sys.exit(1)
 
-    # Bluetooth services
-    run("sc config \"BthAvctpSvc\" start=disabled")
-    run("sc config \"BthHFSrv\" start=disabled")
-    run("sc config \"BTAGService\" start=manual")
-    run("sc config \"bthserv\" start=manual")
-    run("sc config \"BluetoothUserService\" start=demand")
+    # Extract all commands to pass to backup system
+    commands_to_apply = [
+        r"""sc config \\\"workfolderssvc\\\" start=disabled""",
+        r"""sc config \\\"workfolderssvc\\\" start=demand""",
+        r"""sc config \\\"workfolderssvc\\\" start= demand""",
+        r"""sc config workfolderssvc start=disabled""",
+        r"""sc stop workfolderssvc""",
+        r"""sc config \\\"BTAGService\\\" start=manual""",
+        r"""sc config BTAGService start= disabled""",
+        r"""sc config BTAGService start=demand""",
+        r"""sc config BTAGService start=disabled""",
+        r"""sc config DPS start= Disabled""",
+        r"""sc config \\\"UmRdpService\\\" start=disabled""",
+        r"""sc config \\\"DPS\\\" start=disabled""",
+        r"""sc config \\\"WdiServiceHost\\\" start=disabled""",
+        r"""sc config \\\"WdiSystemHost\\\" start=disabled""",
+        r"""sc config \\\"PcaSvc\\\" start=disabled""",
+        r"""sc config \\\"diagsvc\\\" start=disabled""",
+        r"""sc config \\\"SSDPSRV\\\" start=disabled""",
+        r"""sc config PcaSvc start=disabled""",
+        r"""sc config DPS start=disabled""",
+        r"""sc config WdiServiceHost start=disabled""",
+        r"""sc config WdiSystemHost start=disabled""",
+        r"""sc config PcaSvc start= disabled""",
+        r"""sc config SSDPSRV start= disabled""",
+        r"""sc config diagsvc start= disabled""",
+        r"""sc config UmRdpService start=disabled""",
+        r"""sc config diagsvc start=disabled""",
+        r"""sc config SSDPSRV start=disabled""",
+        r"""sc config WdiServiceHost start= disabled""",
+        r"""sc config WdiSystemHost start= disabled""",
+        r"""sc config \\\"diagsvc\\\" start= disabled""",
+        r"""sc config \\\"DPS\\\" start= disabled""",
+        r"""sc config \\\"WdiServiceHost\\\" start= disabled""",
+        r"""sc config \\\"WdiSystemHost\\\" start= disabled""",
+        r"""sc config \\\"PcaSvc\\\" start= disabled""",
+        r"""sc config \\\"SSDPSRV\\\" start=demand""",
+        r"""sc config \\\"UmRdpService\\\" start=demand""",
+        r"""sc config \\\"SSDPSRV\\\" start= demand""",
+        r"""sc config \\\"UmRdpService\\\" start= demand""",
+        r"""sc config \\\"WdiServiceHost\\\" start= demand""",
+        r"""sc config \\\"WdiSystemHost\\\" start= demand""",
+        r"""sc stop UmRdpService""",
+        r"""sc stop DPS""",
+        r"""sc stop WdiServiceHost""",
+        r"""sc stop WdiSystemHost""",
+        r"""sc stop PcaSvc""",
+        r"""sc stop \\\"diagsvc\\\"""",
+        r"""sc stop \\\"DPS\\\"""",
+        r"""sc stop \\\"WdiServiceHost\\\"""",
+        r"""sc stop \\\"WdiSystemHost\\\"""",
+        r"""sc stop \\\"PcaSvc\\\"""",
+        r"""sc stop diagsvc""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\AppModel\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\Cellcore\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\Circular Kernel Context Logger\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\CloudExperienceHostOobe\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\DataMarket\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\DiagLog\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\HolographicDevice\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\iclsClient\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\iclsProxy\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\LwtNetLog\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\Mellanox-Kernel\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\Microsoft-Windows-AssignedAccess-Trace\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\Microsoft-Windows-Setup\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\NBSMBLOGGER\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\PEAuthLog\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\RdrLog\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\ReadyBoot\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\SetupPlatform\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\SetupPlatformTel\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\SocketHeciServer\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\SpoolerLogger\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\SQMLogger\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\TCPIPLOGGER\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\TileStore\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\Tpm\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\TPMProvisioningService\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\UBPM\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\WdiContextLog\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\WFP-IPsec Trace\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\WiFiDriverIHVSession\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\WiFiDriverIHVSessionRepro\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\WiFiSession\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\WMI\\\\Autologger\\\\WinPhoneCritical\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""sc config \\\"CDPSvc\\\" start=disabled""",
+        r"""sc config \\\"CDPUserSvc\\\" start=disabled""",
+        r"""sc config \\\"InventorySvc\\\" start=demand""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskFootprint\\\\Diagnostics\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskFootprint\\\\Diagnostics\\\" /disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\DiskFootprint\\\\Diagnostics\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskFootprint\\\\Diagnostics\\\"""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Power Efficiency Diagnostics\\\\AnalyzeSystem\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Power Efficiency Diagnostics\\\\AnalyzeSystem\\\" /disable""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\MemoryDiagnostic\\\" /f""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Power Efficiency Diagnostics\\\\AnalyzeSystem\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Power Efficiency Diagnostics\\\\AnalyzeSystem\\\"""",
+        r"""sc config \\\"WerSvc\\\" start=disabled""",
+        r"""sc config \\\"wercplsupport\\\" start=demand""",
+        r"""sc config WerSvc start=disabled""",
+        r"""sc config wercplsupport start= disabled""",
+        r"""sc config WerSvc start= disabled""",
+        r"""sc config \\\"WerSvc\\\" start=demand""",
+        r"""sc config \\\"wercplsupport\\\" start= demand""",
+        r"""sc config \\\"WerSvc\\\" start= demand""",
+        r"""sc config \\\"WerSvc\\\" start= disabled""",
+        r"""sc config wercplsupport start=disabled""",
+        r"""net stop WerSvc""",
+        r"""sc stop WerSvc""",
+        r"""sc stop \\\"WerSvc\\\"""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Windows Error Reporting\\\\QueueReporting\\\" /disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Windows Error Reporting\\\\QueueReporting\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Windows Error Reporting\\\\QueueReporting\\\"""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\Microsoft Compatibility Appraiser\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\ProgramDataUpdater\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\AitAgent\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\BthSQM\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\KernelCeipTask\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\UsbCeip\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticDataCollector\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticResolver\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyMonitor\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyRefresh\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyUpload\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Maintenance\\\\WinSAT\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\CloudExperienceHost\\\\CreateObjectTask\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\PI\\\\Sqm-Tasks\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\NetTrace\\\\GatherNetworkInfo\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\WindowsUpdate\\\\Automatic App Update\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Device Information\\\\Device\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\BthSQM\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\KernelCeipTask\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\UsbCeip\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\Microsoft Compatibility Appraiser\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\ProgramDataUpdater\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticDataCollector\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticResolver\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyMonitor\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyRefresh\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyUpload\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Maintenance\\\\WinSAT\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\AitAgent\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\CloudExperienceHost\\\\CreateObjectTask\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\PI\\\\Sqm-Tasks\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\NetTrace\\\\GatherNetworkInfo\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\WindowsUpdate\\\\Automatic App Update\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Device Information\\\\Device\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Device Information\\\\Device User\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\Scheduled Start\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Maps\\\\MapsUpdateTask\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\USO_UxBroker_Display\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\QueueReader\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\AITAgent\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\Schedule Scan\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\WindowsUpdate\\\\Scheduled Start\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\*\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\WindowsUpdate\\\\*\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Application Experience\\\\Microsoft Compatibility Appraiser\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\UsbCeip\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Maps\\\\MapsUpdateTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\NetTrace\\\\GatherNetworkInfo\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\NetTrace\\\\GatherNetworkInfo\\\"""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Application Experience\\\\ProgramDataUpdater\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Device Information\\\\Device\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Device Information\\\\Device User\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticDataCollector\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Maintenance\\\\WinSAT\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Maps\\\\MapsToastTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\PI\\\\Sqm-Tasks\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\Report policies\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\Schedule Scan\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\Schedule Scan Static Task\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\UpdateModelTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\USO_UxBroker\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WindowsUpdate\\\\Scheduled Start\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\BthSQM\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\KernelCeipTask\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\UsbCeip\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\Microsoft Compatibility Appraiser\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\ProgramDataUpdater\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticDataCollector\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticResolver\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyMonitor\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyRefresh\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Shell\\\\FamilySafetyUpload\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Maintenance\\\\WinSAT\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\AitAgent\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\CloudExperienceHost\\\\CreateObjectTask\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\PI\\\\Sqm-Tasks\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Device Information\\\\Device\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Device Information\\\\Device User\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\WindowsUpdate\\\\Automatic App Update\\\"""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\KernelCeipTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\DiskDiagnostic\\\\Microsoft-Windows-DiskDiagnosticResolver\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\CloudExperienceHost\\\\CreateObjectTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Feedback\\\\WSCSecurityAudit\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\UpdateOrchestrator\\\\USO_UxBroker\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Maps\\\\MapsToastTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\MemoryDiagnostic\\\\ProcessMemoryDiagnosticEvents\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\MemoryDiagnostic\\\\RunFullMemoryDiagnostic\\\" /disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Windows Filtering Platform\\\\BfeOnServiceStartTypeChange\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Windows Filtering Platform\\\\BfeOnServiceStartTypeChange\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Input\\\\MouseSyncDataAvailable\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\StartupAppTask\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Consolidator\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Uploader\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Autochk\\\\Proxy\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Time Synchronization\\\\ForceSynchronizeTime\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Time Synchronization\\\\SynchronizeTime\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Consolidator\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Uploader\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\StartupAppTask\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Autochk\\\\Proxy\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Time Synchronization\\\\ForceSynchronizeTime\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Time Synchronization\\\\SynchronizeTime\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\HelloFace\\\\FODCleanupTask\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\PcaPatchDbTask\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Diagnosis\\\\Scheduled\\\" /DISABLE""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Performance\\\\PerfTrack\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\RAID Recovery\\\\Scheduled\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Servicing\\\\StartComponentCleanup\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Recovery Environment\\\\VerifyWinRE\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\BitLocker\\\\BitLocker Encrypt All Drives\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\BitLocker\\\\BitLocker MDM policy Refresh\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\ApplicationData\\\\DsSvcCleanup\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\TaskScheduler\\\\Maintenance Configurator\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\TaskScheduler\\\\Regular Maintenance\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\TaskScheduler\\\\Idle Maintenance\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Speech\\\\SpeechModelDownloadTask\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Maintenance\\\\Regular Maintenance\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\UpdateAssistant\\\\*\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\WaaSMedic\\\\*\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Autochk\\\\Proxy\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Consolidator\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Application Experience\\\\MareBackup\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Application Experience\\\\StartupAppTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Application Experience\\\\PcaPatchDbTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Time Zone\\\\SynchronizeTimeZone\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\AppID\\\\EDP Policy Manager\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\AppID\\\\PolicyConverter\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\AppID\\\\VerifiedPublisherCertStoreCheck\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\ApplicationData\\\\appuriverifierdaily\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\ApplicationData\\\\appuriverifierinstall\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\BrokerInfrastructure\\\\BgTaskRegistrationMaintenanceTask\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\CertificateServicesClient\\\\AikCertEnrollTask\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\CertificateServicesClient\\\\KeyPreGenTask\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\Clip\\\\License Validation\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\DeviceDirectoryClient\\\\HandleCommand\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\DeviceDirectoryClient\\\\HandleWnsCommand\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\DeviceDirectoryClient\\\\IntegrityCheck\\\" /disable""",
+        r"""schtasks /Change /TN \\\"\\\\Microsoft\\\\Windows\\\\DeviceDirectoryClient\\\\LocateCommandUserSession\\\" /disable""",
+        r"""taskkill /f /im explorer.exe""",
+        r"""taskkill /F /IM Teams.exe""",
+        r"""taskkill /f /im msedge.exe""",
+        r"""taskkill /f /im msedge.exe /fi \\\"IMAGENAME eq msedge.exe\\\"""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{E61FEADD-31CB-4052-8A16-1F4336764D10}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{880B9D61-BF97-4850-97D8-CD9EBFC4488A}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{CDF54DC6-6DCD-410E-A3F0-003BB1289F40}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{7F2DA095-D54F-4B13-B246-9B6F33A50E83}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\Maps\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{2409B88C-473B-428B-8795-4C32D7822C9F}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{C9D09D2D-8C0A-4A0F-A699-4125AD19EF9C}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{74F6069B-3D81-479E-AA67-42CE80F16799}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{74F6069B-3D81-479E-AA67-42CE80F16799}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{74F6069B-3D81-479E-AA67-42CE80F16799}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{B97E9B4F-4348-4D52-8204-5EB3B9E3351C}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\RemoteApp and Desktop Connections Update\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\RemoteAssistance\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Logon\\\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Plain\\\\{10B3DD77-3048-41E7-A34D-5FF120D33FA4}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\Device Setup\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\DeviceDirectoryClient\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\Device Information\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\Feedback\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\WDI\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\Servicing\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{4C5BCB25-2C1D-40F3-A779-FDE6280DB867}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\Management\\\\Provisioning\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{0E511F8F-D1BF-49C8-B1B9-A6C784A17EDA}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{1D3D9B10-30A4-459E-8B32-248CAD0EB7EF}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{3EFB737D-965A-4364-8CBA-CCDA345B1C71}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{76300FA9-9EB5-4A2C-8087-029276F64728}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{825F76D6-EA34-4133-BF96-B416888766A3}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{8D567D13-E3B8-4273-84F4-C743E60872CC}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{BAE9F0C3-0DB3-494E-BC0B-42703170C272}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{C6D0FF06-5886-4924-93EB-851D6F3CBD06}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{81272F44-D745-4699-8216-955865606EAC}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{9FFC9FC7-ACE3-434F-A78C-43BBD0C1B871}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{8B551B42-E746-49C9-A6F3-D9B988AE0914}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{BE7B1C85-5B05-49EE-A887-1F23FF59A1EA}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{68AB1C40-FB5C-490E-9513-733CCED864C1}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{FB9EE28D-D0CA-4B6E-B47A-201C830C7006}\\\" /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tasks\\\\{CD3A454B-E619-4AA6-85B5-B2D98ABC43A1}\\\" /f""",
+        r"""taskkill /f /im CompatTelRunner.exe""",
+        r"""taskkill /f /im maintenanceservice.exe""",
+        r"""taskkill /f /im uninstall.exe""",
+        r"""Reg.exe delete \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\MicrosoftEdgeUpdateTaskMachineCore\\\" /f""",
+        r"""Reg.exe delete \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\MicrosoftEdgeUpdateTaskMachineUA\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"AMDInstallLauncher\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"AMDLinkUpdate\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"AMDRyzenMasterSDKTask\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"Driver Easy Scheduled Scan\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"ModifyLinkUpdate\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"SoftMakerUpdater\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"StartCN\\\" /f""",
+        r"""schtasks /DELETE /TN \\\"StartDVR\\\" /f""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Diagnosis\\\\RecommendedTroubleshootingScanner\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Diagnosis\\\\Scheduled\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\DUSM\\\\dusmtask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\EnterpriseMgmt\\\\MDMMaintenenceTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Flighting\\\\FeatureConfig\\\\ReconcileFeatures\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Flighting\\\\FeatureConfig\\\\UsageDataFlushing\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Flighting\\\\FeatureConfig\\\\UsageDataReporting\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Flighting\\\\OneSettings\\\\RefreshCache\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Input\\\\LocalUserSyncDataAvailable\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Input\\\\PenSyncDataAvailable\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Input\\\\TouchpadSyncDataAvailable\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\International\\\\Synchronize Language Settings\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\LanguageComponentsInstaller\\\\Installation\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\LanguageComponentsInstaller\\\\ReconcileLanguageResources\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\LanguageComponentsInstaller\\\\Uninstallation\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\License Manager\\\\TempSignedLicenseExchange\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Management\\\\Provisioning\\\\Cellular\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Management\\\\Provisioning\\\\Logon\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Mobile Broadband Accounts\\\\MNO Metadata Parser\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\MUI\\\\LPRemove\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\PushToInstall\\\\Registration\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Ras\\\\MobilityManager\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\RecoveryEnvironment\\\\VerifyWinRE\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\RemoteAssistance\\\\RemoteAssistanceTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\RetailDemo\\\\CleanupOfflineContent\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Servicing\\\\StartComponentCleanup\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Setup\\\\SetupCleanupTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Setup\\\\SnapshotCleanupTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\SpacePort\\\\SpaceAgentTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\SpacePort\\\\SpaceManagerTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Speech\\\\SpeechModelDownloadTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Task Manager\\\\Interactive\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Time Synchronization\\\\ForceSynchronizeTime\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Time Synchronization\\\\SynchronizeTime\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Time Zone\\\\SynchronizeTimeZone\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\TPM\\\\Tpm-HASCertRetr\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\TPM\\\\Tpm-Maintenance\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\UPnP\\\\UPnPHostConfig\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\User Profile Service\\\\HiveUploadTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WDI\\\\ResolutionHost\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Work Folders\\\\Work Folders Logon Synchronization\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Work Folders\\\\Work Folders Maintenance Work\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Workplace Join\\\\Automatic-Device-Join\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WwanSvc\\\\NotificationTask\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WwanSvc\\\\OobeDiscovery\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\InstallService\\\\ScanForUpdates\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\InstallService\\\\ScanForUpdatesAsUser\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\InstallService\\\\SmartRetry\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\InstallService\\\\WakeUpAndContinueUpdates\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\InstallService\\\\WakeUpAndScanForUpdates\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WaaSMedic\\\\PerformRemediation\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Printing\\\\EduPrintProv\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Printing\\\\PrinterCleanupTask\\\" /Disable""",
+        r"""sc start \\\"BITS\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Consolidator\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Customer Experience Improvement Program\\\\Uploader\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\StartupAppTask\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Autochk\\\\Proxy\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Application Experience\\\\PcaPatchDbTask\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Office\\\\Office 15 Subscription Heartbeat\\\"""",
+        r"""schtasks /change /TN \\\"\\\\Microsoft\\\\Office\\\\Office 15 Subscription Heartbeat\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Time Synchronization\\\\ForceSynchronizeTime\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Time Synchronization\\\\SynchronizeTime\\\"""",
+        r"""schtasks /change /Disable /tn \\\"NvTmRep_CrashReport1_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\\\"""",
+        r"""schtasks /change /Disable /tn \\\"NvTmRep_CrashReport2_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\\\"""",
+        r"""schtasks /change /Disable /tn \\\"NvTmRep_CrashReport3_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\\\"""",
+        r"""schtasks /change /Disable /tn \\\"NvTmRep_CrashReport4_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\\\"""",
+        r"""schtasks /change /Disable /tn \\\"NvDriverUpdateCheckDaily_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\\\"""",
+        r"""schtasks /change /Disable /tn \\\"NvTmMon_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}\\\"""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Location\\\\Notifications\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Location\\\\WindowsActionDialog\\\" /Disable""",
+    ]
+    
+    # Create comprehensive backup BEFORE applying optimizations
+    print(f"Creating comprehensive backup for services...")
+    backup_info = create_comprehensive_backup("services", commands_to_apply)
+    print(f"Backup created: {backup_info['backed_up_items']} items backed up")
+    print(f"Backup directory: {backup_info['backup_directory']}")
+    
+    # Now apply all optimizations
+    print(f"Applying services optimizations...")
+    for cmd in commands_to_apply:
+        run(cmd)
+    
+    print(f"{category_name.title()} optimizations completed!")
+    return backup_info
 
-    # Work folders
-    run("sc config \"workfolderssvc\" start=disabled")
 
-    # Update services
-    run("sc config \"UsoSvc\" start=disabled")
-    run("sc config \"wuauserv\" start=disabled")
-    run("reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\UsoSvc\" /v Start /t reg_dword /d 4 /f")
-    run("reg add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\wuauserv\" /v Start /t reg_dword /d 4 /f")
+def get_backup_data():
+    return {'backup_created': True}
 
-    # Print services
-    run("sc config \"PrintNotify\" start=disabled")
-    run("sc config \"Spooler\" start=disabled")
 
-    # Remote services
-    run("sc config \"RemoteAccess\" start=disabled")
-    run("sc config \"RemoteRegistry\" start=disabled")
-    run("sc config \"SessionEnv\" start=disabled")
-    run("sc config \"TermService\" start=disabled")
-    run("sc config \"UmRdpService\" start=disabled")
-
-    # Windows search and indexing
-    run("sc config \"WSearch\" start=disabled")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\WSearch\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
-
-    # Superfetch/SysMain
-    run("sc config \"SysMain\" start=disabled")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\SysMain\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
-
-    # Windows Defender (if not needed)
-    run("sc config \"WdNisSvc\" start=disabled")
-    run("sc config \"WinDefend\" start=disabled")
-    run("sc config \"SecurityHealthService\" start=disabled")
-
-    # Xbox services
-    run("sc config \"XblAuthManager\" start=disabled")
-    run("sc config \"XblGameSave\" start=disabled")
-    run("sc config \"XboxGipSvc\" start=disabled")
-    run("sc config \"XboxNetApiSvc\" start=disabled")
-
-    # Tablet and touch services
-    run("sc config \"TabletInputService\" start=disabled")
-    run("sc config \"TouchKeyboard\" start=disabled")
-
-    # Diagnostics services
-    run("sc config \"DPS\" start=disabled")
-    run("sc config \"WdiServiceHost\" start=disabled")
-    run("sc config \"WdiSystemHost\" start=disabled")
-
-    # Sensor services
-    run("sc config \"SensorDataService\" start=disabled")
-    run("sc config \"SensorService\" start=disabled")
-    run("sc config \"SensrSvc\" start=disabled")
-
-    # Geolocation
-    run("sc config \"lfsvc\" start=disabled")
-
-    # Biometrics
-    run("sc config \"WbioSrvc\" start=disabled")
-
-    # Windows Connect Now
-    run("sc config \"wcncsvc\" start=disabled")
-
-    # Smart card
-    run("sc config \"SCardSvr\" start=disabled")
-    run("sc config \"ScDeviceEnum\" start=disabled")
-    run("sc config \"SCPolicySvc\" start=disabled")
-
-    # Parental controls
-    run("sc config \"WpcMonSvc\" start=disabled")
-
-    # Maps
-    run("sc config \"MapsBroker\" start=disabled")
-
-    # Downloaded Maps Manager
-    run("sc config \"dmwappushservice\" start=disabled")
-
-    # Fax
-    run("sc config \"Fax\" start=disabled")
-
-    # Phone service
-    run("sc config \"PhoneSvc\" start=disabled")
-
-    # Retail demo
-    run("sc config \"RetailDemo\" start=disabled")
-
-    # SSDP Discovery
-    run("sc config \"SSDPSRV\" start=disabled")
-
-    # Windows Insider service
-    run("sc config \"wisvc\" start=disabled")
-
-    # Diagnostic execution service
-    run("sc config \"diagsvc\" start=disabled")
-
-    # Windows Image Acquisition
-    run("sc config \"stisvc\" start=disabled")
-
-    # Program Compatibility Assistant
-    run("sc config \"PcaSvc\" start=disabled")
-
-    # Scheduled tasks optimization
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Application Experience\\ProgramDataUpdater\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Autochk\\Proxy\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Defrag\\ScheduledDefrag\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Device Information\\Device\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\DiskFootprint\\Diagnostics\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Maintenance\\WinSAT\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Maps\\MapsUpdateTask\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Windows Error Reporting\\QueueReporting\" /disable")
+def restore_from_backup_data(backup_dir):
+    if not backup_dir:
+        return False
+    return restore_from_comprehensive_backup(backup_dir)

@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from backup_mgr_comprehensive import create_comprehensive_backup, restore_from_comprehensive_backup
 
 
 def run(cmd):
@@ -16,77 +17,100 @@ def run(cmd):
 
 
 def apply_power():
-    """Optimizaciones de energía: CPU, rendimiento y gestión de energía"""
+    """Optimizaciones de energía: Desactivar ahorro de energía y throttling"""
     if os.name != "nt":
         sys.exit(1)
 
-    # Set high performance power plan
-    run("powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c")
+    # Extract all commands to pass to backup system
+    commands_to_apply = [
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"AutoPowerSaveModeEnabled\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"NicAutoPowerSaver\\\" /t REG_SZ /d \\\"2\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnableWakeOnLan\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"S5WakeOnLan\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnablePME\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnableGreenEthernet\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnableSavePowerNow\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnablePowerManagement\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"PowerDownPll\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"PowerSavingMode\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"ReduceSpeedOnPowerDown\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnableConnectedPowerGating\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"GigaLite\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"ULPMode\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"WakeOnDisconnect\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"*WakeOnMagicPacket\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"*WakeOnPattern\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"WakeOnLink\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\hidusb\\\\Parameters\\\" /v \\\"EnablePowerManagement\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EnabledynamicPowerGating\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /v EnhancedPowerManagementEnabled /t REG_DWORD /d 0 /f""",
+        r"""reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /v AllowIdleIrpInD3 /t REG_DWORD /d 0 /f""",
+        r"""\"schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\FileHistory\\\\File History (maintenance mode""",
+        r"""\"schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\FileHistory\\\\File History (triggered backup""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\FileHistory\\\" /v \\\"Disabled\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\System\\\\TurnOffFileHistory\\\" /v \\\"value\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\storahci\\\\Parameters\\\\Device\\\" /v \\\"EnableDIPM\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\storahci\\\\Parameters\\\\Device\\\" /v \\\"EnableHIPM\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\ControlSet001\\\\Control\\\\Power\\\" /V \\\"HibernateEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\storahci\\\\Parameters\\\\Device\\\" /v \\\"EnableDIPM\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\storahci\\\\Parameters\\\\Device\\\" /v \\\"EnableHIPM\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\Power\\\" /v \\\"HibernateEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%s\\\\Device Parameters\\\" /v EnhancedPowerManagementEnabled /t REG_DWORD /d 0 /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"EnhancedPowerManagementEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /v \\\"EnhancedPowerManagementEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /f /v \\\"EnhancedPowerManagementEnabled\\\" /t REG_DWORD /d 0""",
+        r"""reg add \\\"HKLM\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"EnhancedPowerManagementEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"EnhancedPowerManagementEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""REG ADD \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /F /V \\\"EnhancedPowerManagementEnabled\\\" /T REG_DWORD /d 0""",
+        r"""reg.exe add \\\"HKLM\\\\SYSTEM\\\\ControlSet001\\\\Enum\\\\%%a\\\\Device Parameters\\\" /v EnhancedPowerManagementEnabled /t REG_DWORD /d 00000000 /f""",
+        r"""reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%s\\\\Device Parameters\\\" /v AllowIdleIrpInD3 /t REG_DWORD /d 0 /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"AllowIdleIrpInD3\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"D3ColdSupported\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /v \\\"AllowIdleIrpInD3\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\FileHistory\\\" /v \\\"Disabled\\\" /t REG_DWORD /d 1 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\System\\\\TurnOffFileHistory\\\" /v \\\"value\\\" /t REG_DWORD /d 1 /f""",
+        r"""REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Schedule\\\\TaskCache\\\\Tree\\\\Microsoft\\\\Windows\\\\FileHistory\\\" /f""",
+        r"""reg add \\\"%%s\\\" /v \\\"EnableIdlePowerManagement\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"%%s\\\" /v \\\"IdlePowerManagement\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /f /v \\\"AllowIdleIrpInD3\\\" /t REG_DWORD /d 0""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\FileHistory\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\Session Manager\\\\Power\\\" /v \\\"HiberbootEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""REG ADD \\\"%%a\\\" /F /V \\\"EnableHIPM\\\" /T REG_DWORD /d \\\"0\\\"""",
+        r"""REG ADD \\\"%%a\\\" /F /V \\\"EnableDIPM\\\" /T REG_DWORD /d \\\"0\\\"""",
+        r"""REG ADD \\\"%%a\\\" /F /V \\\"EnableHDDParking\\\" /T REG_DWORD /d \\\"0\\\"""",
+        r"""REG ADD \\\"%%a\\\" /F /V \\\"EnableALPM\\\" /T REG_DWORD /d \\\"0\\\"""",
+        r"""reg add \\\"HKLM\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"AllowIdleIrpInD3\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\System\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"D3ColdSupported\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"AllowIdleIrpInD3\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%i\\\\Device Parameters\\\" /v \\\"D3ColdSupported\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""REG ADD \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Enum\\\\%%a\\\\Device Parameters\\\" /F /V \\\"AllowIdleIrpInD3\\\" /T REG_DWORD /d 0""",
+        r"""reg.exe add \\\"HKLM\\\\SYSTEM\\\\ControlSet001\\\\Enum\\\\%%a\\\\Device Parameters\\\" /v AllowIdleIrpInD3 /t REG_DWORD /d 00000000 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"ThermalThrottling\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Control\\\\Power\\\" /v \\\"PowerThrottlingOff\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""\"schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\FileHistory\\\\File History (maintenance mode""",
+        r"""\"schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\FileHistory\\\\File History (maintenance mode""",
+    ]
+    
+    # Create comprehensive backup BEFORE applying optimizations
+    print(f"Creating comprehensive backup for power...")
+    backup_info = create_comprehensive_backup("power", commands_to_apply)
+    print(f"Backup created: {backup_info['backed_up_items']} items backed up")
+    print(f"Backup directory: {backup_info['backup_directory']}")
+    
+    # Now apply all optimizations
+    print(f"Applying power optimizations...")
+    for cmd in commands_to_apply:
+        run(cmd)
+    
+    print(f"{category_name.title()} optimizations completed!")
+    return backup_info
 
-    # Disable USB selective suspend
-    run("powercfg -setacvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0")
-    run("powercfg -setdcvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0")
 
-    # Disable PCI Express Link State Power Management
-    run("powercfg -setacvalueindex scheme_current 501a4d13-42af-4429-9fd1-a8218c268e20 ee12f906-d277-404b-b6da-e5fa1a576df5 0")
-    run("powercfg -setdcvalueindex scheme_current 501a4d13-42af-4429-9fd1-a8218c268e20 ee12f906-d277-404b-b6da-e5fa1a576df5 0")
+def get_backup_data():
+    return {'backup_created': True}
 
-    # Set processor power management to maximum performance
-    run("powercfg -setacvalueindex scheme_current 54533251-82be-4824-96c1-47b60b740d00 bc5038f7-23e0-4960-96da-33abaf5935ec 100")
-    run("powercfg -setacvalueindex scheme_current 54533251-82be-4824-96c1-47b60b740d00 893dee8e-2bef-41e0-89c6-b55d0929964c 100")
 
-    # Disable hard disk sleep
-    run("powercfg -setacvalueindex scheme_current 0012ee47-9041-4b5d-9b77-535fba8b1442 6738e2c4-e8a5-4a42-b16a-e040e769756e 0")
-    run("powercfg -setdcvalueindex scheme_current 0012ee47-9041-4b5d-9b77-535fba8b1442 6738e2c4-e8a5-4a42-b16a-e040e769756e 0")
-
-    # Disable sleep after time
-    run("powercfg -change -standby-timeout-ac 0")
-    run("powercfg -change -standby-timeout-dc 0")
-
-    # Disable hibernation
-    run("powercfg /h off")
-
-    # Disable monitor timeout
-    run("powercfg -change -monitor-timeout-ac 0")
-    run("powercfg -change -monitor-timeout-dc 0")
-
-    # Apply power settings
-    run("powercfg -setactive scheme_current")
-
-    # Disable power throttling
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling\" /v \"PowerThrottlingOff\" /t REG_DWORD /d 1 /f")
-
-    # Disable CPU parking (all cores active)
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583\" /v \"ValueMax\" /t REG_DWORD /d 0 /f")
-
-    # Disable network adapter power management
-    run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"Get-NetAdapter | Disable-NetAdapterPowerManagement -WakeOnMagicPacket:$false -WakeOnPattern:$false -DeviceSleepOnDisconnect:$false -SelectiveSuspend:$false -ArpOffload:$false -NSOffload:$false -D0PacketCoalescing:$false -RsnRekeyOffload:$false -NoRestart -ErrorAction SilentlyContinue\"")
-    run("Reg.exe add \"%%n\" /v \"AutoPowerSaveModeEnabled\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"NicAutoPowerSaver\" /t REG_SZ /d \"2\" /f")
-    run("Reg.exe add \"%%n\" /v \"EnableSavePowerNow\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"EnablePowerManagement\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"PowerDownPll\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"PowerSavingMode\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"ReduceSpeedOnPowerDown\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"EnableConnectedPowerGating\" /t REG_SZ /d \"0\" /f")
-
-    # Disable USB power management
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\hidusb\\Parameters\" /v \"EnablePowerManagement\" /t REG_DWORD /d \"0\" /f")
-
-    # Disable fast startup (can cause issues)
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power\" /v \"HiberbootEnabled\" /t REG_DWORD /d 0 /f")
-
-    # Performance registry settings
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\" /v \"ClearPageFileAtShutdown\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\" /v \"LargeSystemCache\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\" /v \"SecondLevelDataCache\" /t REG_DWORD /d 0 /f")
-
-    # Disable dynamic tick
-    run("bcdedit /set disabledynamictick yes")
-
-    # Use all cores for boot
-    run("bcdedit /set numproc 0")
-
-    # Performance boot settings
-    run("bcdedit /set quietboot yes")
-    run("bcdedit /timeout 3")
+def restore_from_backup_data(backup_dir):
+    if not backup_dir:
+        return False
+    return restore_from_comprehensive_backup(backup_dir)

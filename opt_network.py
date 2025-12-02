@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from backup_mgr_comprehensive import create_comprehensive_backup, restore_from_comprehensive_backup
 
 
 def run(cmd):
@@ -20,92 +21,293 @@ def apply_network():
     if os.name != "nt":
         sys.exit(1)
 
-    # TCP/IP optimizations
-    run("netsh int teredo set state disabled")
-    run("netsh int tcp set heuristics Disabled")
-    run("netsh winsock reset")
-    run("netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent")
-    run("netsh interface tcp set global initialrto=2000")
-    run("netsh advfirewall set allprofiles state off")
-    run("netsh int tcp set global autotuninglevel=normal")
-    run("netsh int tcp set global rss=enabled")
-    run("netsh int tcp set global chimney=enabled")
-    run("netsh int tcp set global netdma=enabled")
-    run("netsh int tcp set global dca=enabled")
-    run("netsh int tcp set global congestionprovider=ctcp")
-    run("netsh int tcp set heuristics disabled")
-    run("netsh int tcp set global timestamps=disabled")
-    run("netsh int tcp set global fastopen=enabled")
-    run("netsh Int tcp set global nonsackrttresiliency=disabled")
-    run("netsh int tcp set global autotuninglevel=disabled")
-    run("netsh int tcp set global ecncapability=enabled")
-    run("netsh interface ipv4 set subinterface \"Ethernet\" mtu=1500 store=persistent")
-    run("netsh int ipv4 set dynamicportrange protocol=tcp start=1025 num=64511")
-    run("netsh Int ipv4 set glob defaultcurhoplimit=255")
-    run("netsh Int tcp set global maxsynretransmissions=2")
-    run("netsh int tcp set global initialRto=2000")
-    run("netsh int tcp set global rss=disabled")
-    run("netsh int tcp set global initialwindowsize=65535")
-    run("netsh int tcp set global numack=2")
-    run("netsh int tcp set global ackdelay=0")
-    run("netsh int tcp set global ecncapability=disabled")
-    run("netsh interface teredo set state disabled")
+    # Extract all commands to pass to backup system
+    commands_to_apply = [
+        r"""netsh int teredo set state disabled""",
+        r"""netsh int tcp set heuristics Disabled""",
+        r"""netsh winsock reset""",
+        r"""netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent""",
+        r"""netsh interface tcp set global initialrto=2000""",
+        r"""netsh advfirewall set allprofiles state off""",
+        r"""netsh int tcp set global autotuninglevel=normal""",
+        r"""netsh int tcp set global rss=enabled""",
+        r"""netsh int tcp set global chimney=enabled""",
+        r"""netsh int tcp set global netdma=enabled""",
+        r"""netsh int tcp set global dca=enabled""",
+        r"""netsh int tcp set global congestionprovider=ctcp""",
+        r"""netsh int tcp set heuristics disabled""",
+        r"""netsh int tcp set global timestamps=disabled""",
+        r"""netsh int tcp set global fastopen=enabled""",
+        r"""netsh Int tcp set global nonsackrttresiliency=disabled""",
+        r"""netsh Int tcp set global netdma=enabled""",
+        r"""netsh Int tcp set global congestionprovider=ctcp""",
+        r"""netsh Int tcp set global dca=enabled""",
+        r"""netsh int tcp set global autotuninglevel=disabled""",
+        r"""netsh int tcp set global ecncapability=enabled""",
+        r"""netsh interface ipv4 set subinterface \\\"Ethernet\\\" mtu=1500 store=persistent""",
+        r"""netsh int ipv4 set dynamicportrange protocol=tcp start=1025 num=64511""",
+        r"""netsh Int ipv4 set glob defaultcurhoplimit=255""",
+        r"""netsh Int tcp set global maxsynretransmissions=2""",
+        r"""netsh int tcp set global initialRto=2000""",
+        r"""netsh int tcp set global rss=disabled""",
+        r"""netsh int tcp set global initialwindowsize=65535""",
+        r"""netsh int tcp set global numack=2""",
+        r"""netsh int tcp set global ackdelay=0""",
+        r"""netsh int tcp set global ecncapability=disabled""",
+        r"""netsh interface teredo set state disabled""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"LocalPriority\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"HostsPriority\\\" /t REG_DWORD /d \\\"5\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"DnsPriority\\\" /t REG_DWORD /d \\\"6\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"NetbtPriority\\\" /t REG_DWORD /d \\\"7\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\\%%q\\\" /v InterfaceMetric /t REG_DWORD /d 55 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\\%%q\\\" /v TCPNoDelay /t REG_DWORD /d 1 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\\%%q\\\" /v TcpAckFrequency /t REG_DWORD /d 1 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\\%%q\\\" /v TcpDelAckTicks /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"DisableDHCPMediaSenseEventLog\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnablePMTUBHDetect\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"SackOpts\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"SynAttackProtect\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpMaxDupAcks\\\" /t REG_DWORD /d 2 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpAckFrequency\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TCPNoDelay\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpDelAckTicks\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxUserPort\\\" /t REG_DWORD /d 65534 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpWindowSize\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"GlobalMaxTcpWindowSize\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnableNetDMA\\\" /t REG_DWORD /d 0 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxConnectionsPer1_0Server\\\" /t REG_DWORD /d \\\"16\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxConnectionsPerServer\\\" /t REG_DWORD /d \\\"16\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnableConnectionRateLimiting\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnablePMTUBHDetect\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnablePMTUDiscovery\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnableRSS\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnableTCPA\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnableWsd\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxFreeTcbs\\\" /t REG_DWORD /d \\\"65535\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxHashTableSize\\\" /t REG_DWORD /d \\\"00010000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxUserPort\\\" /t REG_DWORD /d \\\"65534\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"SackOpts\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"SizReqBuf\\\" /t REG_DWORD /d \\\"51319\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"SynAttackProtect\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TCPNoDelay\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"Tcp1323Opts\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpMaxDataRetransmissions\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpAckFrequency\\\" /t REG_DWORD /d \\\"00000005\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"StrictTimeWaitSeqCheck\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"DisableIPSourceRouting\\\" /t REG_DWORD /d \\\"00000008\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpCreateAndConnectTcbRateLimitDepth\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TCPInitalRtt\\\" /t REG_DWORD /d \\\"00046325\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpMaxDupAcks\\\" /t REG_DWORD /d \\\"00000002\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TCPDelAckTicks\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"IPAutoconfigurationEnabled\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"DefaultTTL\\\" /t REG_DWORD /d \\\"38\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnableConnectionRateLimiting\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnableDCA\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnablePMTUBHDetect\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnablePMTUDiscovery\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnableRSS\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnableTCPA\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"EnableWsd\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"MaxFreeTcbs\\\" /t REG_DWORD /d \\\"65535\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"MaxHashTableSize\\\" /t REG_DWORD /d \\\"00010000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"MaxUserPort\\\" /t REG_DWORD /d \\\"65534\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"SackOpts\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"SizReqBuf\\\" /t REG_DWORD /d \\\"51319\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"SynAttackProtect\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TCPNoDelay\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"Tcp1323Opts\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TcpMaxDataRetransmissions\\\" /t REG_DWORD /d \\\"5\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TcpAckFrequency\\\" /t REG_DWORD /d \\\"00000004\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"StrictTimeWaitSeqCheck\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"DisableIPSourceRouting\\\" /t REG_DWORD /d \\\"00000008\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TcpCreateAndConnectTcbRateLimitDepth\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"IPAutoconfigurationEnabled\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TCPInitalRtt\\\" /t REG_DWORD /d \\\"00046325\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TcpMaxDupAcks\\\" /t REG_DWORD /d \\\"00000002\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TCPDelAckTicks\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"DefaultTTL\\\" /t REG_DWORD /d \\\"38\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"LocalPriority\\\" /t REG_DWORD /d \\\"239\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"HostsPriority\\\" /t REG_DWORD /d \\\"240\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"DnsPriority\\\" /t REG_DWORD /d \\\"1740\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\ServiceProvider\\\" /v \\\"NetbtPriority\\\" /t REG_DWORD /d \\\"1741\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Winsock\\\" /v \\\"UseDelayedAcceptance\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Winsock\\\" /v \\\"MaxSockAddrLength\\\" /t REG_DWORD /d \\\"16\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Winsock\\\" /v \\\"MinSockAddrLength\\\" /t REG_DWORD /d \\\"16\\\" /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpAckFrequency\\\" /t REG_DWORD /d 1 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TCPNoDelay\\\" /t REG_DWORD /d 1 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpDelAckTicks\\\" /t REG_DWORD /d 0 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"MaxUserPort\\\" /t REG_DWORD /d 65534 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpWindowSize\\\" /t REG_DWORD /d 65535 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"GlobalMaxTcpWindowSize\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TcpAckFrequency\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\\Interfaces\\\" /v \\\"TCPNoDelay\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"EnableNetDMA\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpAckFrequency\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TCPNoDelay\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters\\\" /v \\\"TcpDelAckTicks\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"AdvancedEEE\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"*EEE\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EEE\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"EEELinkAdvertisement\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"JumboPacket\\\" /t REG_SZ /d \\\"1514\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"TransmitBuffers\\\" /t REG_SZ /d \\\"2048\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"ReceiveBuffers\\\" /t REG_SZ /d \\\"1024\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"IPChecksumOffloadIPv4\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"PMARPOffload\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"PMNSOffload\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"TCPChecksumOffloadIPv4\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"TCPChecksumOffloadIPv6\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"UDPChecksumOffloadIPv6\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"UDPChecksumOffloadIPv4\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"RSS\\\" /t REG_SZ /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"*NumRssQueues\\\" /t REG_SZ /d \\\"2\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"RSSProfile\\\" /t REG_SZ /d \\\"3\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"*FlowControl\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"FlowControlCap\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"FatChannelIntolerant\\\" /t REG_SZ /d \\\"0\\\" /f""",
+        r"""powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"& { Get-NetAdapter | Enable-NetAdapterRss -ErrorAction SilentlyContinue; Get-NetAdapter | ForEach-Object { try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \\'Receive Buffers\\' -RegistryValue 512 -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \\'Transmit Buffers\\' -RegistryValue 512 -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \\'Energy Efficient Ethernet\\' -RegistryValue \\'0\\' -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \\'Interrupt Moderation\\' -RegistryValue \\'Disabled\\' -ErrorAction SilentlyContinue } catch {}; try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName \\'Flow Control\\' -RegistryValue \\'Disabled\\' -ErrorAction SilentlyContinue } catch {} } }\\\"""",
+        r"""powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"Get-NetAdapter | Disable-NetAdapterPowerManagement -WakeOnMagicPacket:$false -WakeOnPattern:$false -DeviceSleepOnDisconnect:$false -SelectiveSuspend:$false -ArpOffload:$false -NSOffload:$false -D0PacketCoalescing:$false -RsnRekeyOffload:$false -NoRestart -ErrorAction SilentlyContinue\\\"""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"LsoV1IPv4\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"LsoV2IPv4\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""Reg.exe add \\\"%%n\\\" /v \\\"LsoV2IPv6\\\" /t REG_SZ /d \\\"%_R_NIC%\\\" /f""",
+        r"""sc config \\\"Wcmsvc\\\" start=disabled""",
+        r"""sc config \\\"NcaSvc\\\" start=demand""",
+        r"""sc config \\\"NetSetupSvc\\\" start=demand""",
+        r"""sc config \\\"iphlpsvc\\\" start=disabled""",
+        r"""sc config \\\"BthAvctpSvc\\\" start=disabled""",
+        r"""sc config \\\"BthHFSrv\\\" start=disabled""",
+        r"""sc config \\\"bthserv\\\" start=manual""",
+        r"""sc config \\\"Netlogon\\\" start=disabled""",
+        r"""sc config \\\"Netman\\\" start=disabled""",
+        r"""sc config \\\"WwanSvc\\\" start=disabled""",
+        r"""sc config \\\"wcncsvc\\\" start=disabled""",
+        r"""sc config \\\"Dhcp\\\" start=auto""",
+        r"""sc config \\\"Dnscache\\\" start=auto""",
+        r"""sc config \\\"NlaSvc\\\" start=auto""",
+        r"""sc config \\\"WlanSvc\\\" start=auto""",
+        r"""sc config \\\"netprofm\\\" start=demand""",
+        r"""sc config \\\"BluetoothUserService\\\" start=demand""",
+        r"""net stop BthAvctpSvc""",
+        r"""sc config \\\"Dnscache\\\" start= demand""",
+        r"""sc start \\\"Dnscache\\\"""",
+        r"""sc start Dnscache""",
+        r"""sc config Dnscache start=auto""",
+        r"""sc config Netlogon start=disabled""",
+        r"""sc config iphlpsvc start=disabled""",
+        r"""sc config wcncsvc start=disabled""",
+        r"""sc config bthserv start=disabled""",
+        r"""sc config BthAvctpSvc start=disabled""",
+        r"""sc config iphlpsvc start= disabled""",
+        r"""sc config BthAvctpSvc start= disabled""",
+        r"""sc config Wcmsvc start= disabled""",
+        r"""sc config bthserv start= disabled""",
+        r"""sc config \\\"BthAvctpSvc\\\" start= demand""",
+        r"""sc config \\\"NcaSvc\\\" start= demand""",
+        r"""sc config \\\"Netlogon\\\" start= demand""",
+        r"""sc config \\\"Netman\\\" start= demand""",
+        r"""sc config \\\"NetSetupSvc\\\" start= demand""",
+        r"""sc config \\\"NlaSvc\\\" start= demand""",
+        r"""sc config \\\"Wcmsvc\\\" start= demand""",
+        r"""sc config \\\"wcncsvc\\\" start= demand""",
+        r"""sc config \\\"WlanSvc\\\" start= demand""",
+        r"""sc config \\\"WwanSvc\\\" start= demand""",
+        r"""sc stop iphlpsvc""",
+        r"""sc stop wcncsvc""",
+        r"""sc config wwansvc start=disabled""",
+        r"""sc stop wwansvc""",
+        r"""sc config Dhcp start=auto""",
+        r"""sc config NlaSvc start=auto""",
+        r"""sc config WlanSvc start=auto""",
+        r"""sc config netprofm start=demand""",
+        r"""sc config bthserv start=demand""",
+        r"""sc config BluetoothUserService start=demand""",
+        r"""sc config Wcmsvc start=disabled""",
+        r"""sc config BthHFSrv start=disabled""",
+        r"""sc config NcaSvc start=disabled""",
+        r"""sc config Netman start=disabled""",
+        r"""sc config NetSetupSvc start=disabled""",
+        r"""sc config \\\"NcdAutoSetup\\\" start=disabled""",
+        r"""sc config NcdAutoSetup start=disabled""",
+        r"""sc config \\\"NcdAutoSetup\\\" start=demand""",
+        r"""sc config \\\"NcdAutoSetup\\\" start= demand""",
+        r"""sc stop NcdAutoSetup""",
+        r"""powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"& { Get-NetAdapter | ForEach-Object { Disable-NetAdapterChecksumOffload -Name $_.Name -IpIPv4 -TcpIPv4 -TcpIPv6 -UdpIPv4 -UdpIPv6 -ErrorAction SilentlyContinue; Disable-NetAdapterLso -Name $_.Name -IPv4 -IPv6 -ErrorAction SilentlyContinue } }\\\"""",
+        r"""powershell -NoLogo -NoProfile -NonInteractive -Command \\\"Enable-NetAdapterBinding -Name \\\"*\\\" -ComponentID ms_tcpip,ms_pacer\\\"""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"NonBestEffortLimit\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DoNotHoldNicBuffers\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DynamicSendBufferDisable\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DefaultReceiveWindow\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DefaultSendWindow\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\NetBT\\\\Parameters\\\" /v \\\"EnableLMHOSTS\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\NetBT\\\\Parameters\\\" /v \\\"NodeType\\\" /t REG_DWORD /d 2 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\LanmanWorkstation\\\\Parameters\\\" /v \\\"DisableBandwidthThrottling\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\LanmanWorkstation\\\\Parameters\\\" /v \\\"DisableLargeMtu\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip6\\\\Parameters\\\" /v \\\"DisabledComponents\\\" /t REG_DWORD /d 255 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows NT\\\\DNSClient\\\" /v \\\"EnableMulticast\\\" /t REG_DWORD /d 0 /f""",
+        r"""powershell -NoProfile -Command \\\"Enable-NetAdapterBinding -Name \\\"*\\\" -ComponentID ms_pacer\\\"""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Dnscache\\\\Parameters\\\" /v \\\"CacheHashTableBucketSize\\\" /t REG_DWORD /d \\\"00000001\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Dnscache\\\\Parameters\\\" /v \\\"CacheHashTableSize\\\" /t REG_DWORD /d \\\"00000180\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Dnscache\\\\Parameters\\\" /v \\\"NegativeCacheTime\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Dnscache\\\\Parameters\\\" /v \\\"NetFailureCacheTime\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Dnscache\\\\Parameters\\\" /v \\\"NegativeSOACacheTime\\\" /t REG_DWORD /d \\\"00000000\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"MaxOutstandingSends\\\" /t REG_DWORD /d \\\"1073741824\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"NonBestEffortLimit\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"TimerResolution\\\" /t REG_DWORD /d \\\"4294967295\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingConforming\\\" /v \\\"ServiceTypeBestEffort\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingConforming\\\" /v \\\"ServiceTypeControlledLoad\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingConforming\\\" /v \\\"ServiceTypeGuaranteed\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingConforming\\\" /v \\\"ServiceTypeNetworkControl\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingConforming\\\" /v \\\"ServiceTypeQualitative\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingNonConforming\\\" /v \\\"ServiceTypeBestEffort\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingNonConforming\\\" /v \\\"ServiceTypeControlledLoad\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingNonConforming\\\" /v \\\"ServiceTypeGuaranteed\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingNonConforming\\\" /v \\\"ServiceTypeNetworkControl\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\\DiffservByteMappingNonConforming\\\" /v \\\"ServiceTypeQualitative\\\" /t REG_DWORD /d \\\"99\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows NT\\\\DNSClient\\\" /v \\\"RegistrationTtl\\\" /t REG_DWORD /d \\\"1117034098\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Network Connections\\\" /v \\\"NC_AllowNetBridge_NLA\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Network Connections\\\" /v \\\"NC_AllowAdvancedTCPIPConfig\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip6\\\\Parameters\\\" /v \\\"Dhcpv6DUID\\\" /t REG_BINARY /d \\\"00010001273662d480c16ee372d7\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip6\\\\Parameters\\\" /v \\\"DisabledComponents\\\" /t REG_DWORD /d \\\"50\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"FastCopyReceiveThreshold\\\" /t REG_DWORD /d \\\"2048\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"FastSendDatagramThreshold\\\" /t REG_DWORD /d \\\"2048\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DefaultSendWindow\\\" /t REG_DWORD /d \\\"415029\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DefaultReceiveWindow\\\" /t REG_DWORD /d \\\"415029\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"MaxFastCopyTransmit\\\" /t REG_DWORD /d \\\"296\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"MaxFastTransmit\\\" /t REG_DWORD /d \\\"100\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"TransmitWorker\\\" /t REG_DWORD /d \\\"50\\\" /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\LanmanWorkstation\\\\Parameters\\\" /v \\\"DisableBandwidthThrottling\\\" /t REG_DWORD /d 1 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\LanmanWorkstation\\\\Parameters\\\" /v \\\"DisableLargeMtu\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DefaultReceiveWindow\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\AFD\\\\Parameters\\\" /v \\\"DefaultSendWindow\\\" /t REG_DWORD /d 65535 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"NonBestEffortLimit\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"TimerResolution\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip6\\\\Parameters\\\" /v \\\"DisabledComponents\\\" /t REG_DWORD /d 255 /f""",
+        r"""reg add \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows NT\\\\DNSClient\\\" /v \\\"EnableMulticast\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Psched\\\" /v \\\"TimerResolution\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Psched\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""\"PowerShell -ExecutionPolicy Unrestricted -Command \\\"$key = \\'HKLM:SYSTEM\\\\CurrentControlSet\\\\services\\\\NetBT\\\\Parameters\\\\Interfaces\\'; Get-ChildItem $key | ForEach {; Set-ItemProperty -Path \\\\\\\"$key\\\\$($_.PSChildName""",
+    ]
+    
+    # Create comprehensive backup BEFORE applying optimizations
+    print(f"Creating comprehensive backup for network...")
+    backup_info = create_comprehensive_backup("network", commands_to_apply)
+    print(f"Backup created: {backup_info['backed_up_items']} items backed up")
+    print(f"Backup directory: {backup_info['backup_directory']}")
+    
+    # Now apply all optimizations
+    print(f"Applying network optimizations...")
+    for cmd in commands_to_apply:
+        run(cmd)
+    
+    print(f"{category_name.title()} optimizations completed!")
+    return backup_info
 
-    # Registry TCP/IP settings
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"LocalPriority\" /t REG_DWORD /d \"4\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"HostsPriority\" /t REG_DWORD /d \"5\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"DnsPriority\" /t REG_DWORD /d \"6\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\ServiceProvider\" /v \"NetbtPriority\" /t REG_DWORD /d \"7\" /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"DisableDHCPMediaSenseEventLog\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnablePMTUBHDetect\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"SackOpts\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"SynAttackProtect\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpMaxDupAcks\" /t REG_DWORD /d 2 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpAckFrequency\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TCPNoDelay\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpDelAckTicks\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"MaxUserPort\" /t REG_DWORD /d 65534 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpWindowSize\" /t REG_DWORD /d 65535 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"GlobalMaxTcpWindowSize\" /t REG_DWORD /d 65535 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnableNetDMA\" /t REG_DWORD /d 0 /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"MaxConnectionsPer1_0Server\" /t REG_DWORD /d \"16\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"MaxConnectionsPerServer\" /t REG_DWORD /d \"16\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnableConnectionRateLimiting\" /t REG_DWORD /d \"00000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnableRSS\" /t REG_DWORD /d \"00000001\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnableTCPA\" /t REG_DWORD /d \"00000001\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"EnableWsd\" /t REG_DWORD /d \"00000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"MaxFreeTcbs\" /t REG_DWORD /d \"65535\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"MaxHashTableSize\" /t REG_DWORD /d \"00010000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"Tcp1323Opts\" /t REG_DWORD /d \"00000001\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpMaxDataRetransmissions\" /t REG_DWORD /d \"4\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"StrictTimeWaitSeqCheck\" /t REG_DWORD /d \"00000001\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"DisableIPSourceRouting\" /t REG_DWORD /d \"00000008\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"TcpCreateAndConnectTcbRateLimitDepth\" /t REG_DWORD /d \"00000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"IPAutoconfigurationEnabled\" /t REG_DWORD /d \"00000000\" /f")
-    run("Reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\" /v \"DefaultTTL\" /t REG_DWORD /d \"38\" /f")
 
-    # Network adapter optimizations
-    run("Reg.exe add \"%%n\" /v \"AdvancedEEE\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"*EEE\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"EEE\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"EEELinkAdvertisement\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"EnableWakeOnLan\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"S5WakeOnLan\" /t REG_SZ /d \"0\" /f")
-    run("Reg.exe add \"%%n\" /v \"JumboPacket\" /t REG_SZ /d \"1514\" /f")
-    run("Reg.exe add \"%%n\" /v \"TransmitBuffers\" /t REG_SZ /d \"2048\" /f")
-    run("Reg.exe add \"%%n\" /v \"ReceiveBuffers\" /t REG_SZ /d \"1024\" /f")
+def get_backup_data():
+    return {'backup_created': True}
 
-    # Network services
-    run("sc config \"Wcmsvc\" start=disabled")
-    run("sc config \"NcaSvc\" start=demand")
-    run("sc config \"NetSetupSvc\" start=demand")
-    run("sc config \"iphlpsvc\" start=disabled")
-    run("sc config \"Netlogon\" start=disabled")
-    run("sc config \"Netman\" start=disabled")
-    run("sc config \"WwanSvc\" start=disabled")
-    run("sc config \"wcncsvc\" start=disabled")
-    run("sc config \"Dhcp\" start=auto")
-    run("sc config \"Dnscache\" start=auto")
-    run("sc config \"NlaSvc\" start=auto")
-    run("sc config \"WlanSvc\" start=auto")
-    run("sc config \"netprofm\" start=demand")
+
+def restore_from_backup_data(backup_dir):
+    if not backup_dir:
+        return False
+    return restore_from_comprehensive_backup(backup_dir)

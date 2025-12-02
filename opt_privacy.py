@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from backup_mgr_comprehensive import create_comprehensive_backup, restore_from_comprehensive_backup
 
 
 def run(cmd):
@@ -20,68 +21,348 @@ def apply_privacy():
     if os.name != "nt":
         sys.exit(1)
 
-    # Disable DiagTrack service
-    run("sc stop DiagTrack")
-    run("sc config DiagTrack start= Disabled")
-    run("sc config \"DiagTrack\" start=disabled")
-    run("reg.exe add \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack\" /V \"Start\" /t REG_DWORD /d \"4\" /f")
-    run("net stop \"DiagTrack\"")
-    run("net stop DiagTrack")
-    run("sc stop \"DiagTrack\"")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\" /v \"DiagTrackStatus\" /t REG_DWORD /d \"2\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\" /v \"ShowedToastAtLevel\" /t REG_DWORD /d \"1\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\" /v \"UploadPermissionReceived\" /t REG_DWORD /d \"1\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\" /v \"DiagTrackAuthorization\" /t REG_DWORD /d \"775\" /f")
-    run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\" /v \"ShowedToastAtLevel\" /t REG_DWORD /d \"1\" /f")
-    run("reg.exe add \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\EventTranscriptKey\" /V \"EnableEventTranscript\" /t REG_DWORD /d \"0\" /f")
+    # Extract all commands to pass to backup system
+    commands_to_apply = [
+        r"""sc stop DiagTrack""",
+        r"""sc config DiagTrack start= Disabled""",
+        r"""sc stop dmwappushservice""",
+        r"""sc config dmwappushservice start= Disabled""",
+        r"""sc config \\\"dmwappushservice\\\" start=demand""",
+        r"""sc config \\\"DiagTrack\\\" start=disabled""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\DiagTrack\\\" /V \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\dmwappushservice\\\" /V \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""sc config DiagTrack start=disabled""",
+        r"""sc config DiagTrack start= disabled""",
+        r"""sc config dmwappushservice start= disabled""",
+        r"""sc config \\\"dmwappushservice\\\" start= demand""",
+        r"""sc config \\\"DiagTrack\\\" start= disabled""",
+        r"""sc config \\\"dmwappushservice\\\" start= disabled""",
+        r"""net stop \\\"DiagTrack\\\"""",
+        r"""net stop \\\"dmwappushservice\\\"""",
+        r"""sc config dmwappushservice start=disabled""",
+        r"""net stop DiagTrack""",
+        r"""net stop dmwappushservice""",
+        r"""sc stop \\\"DiagTrack\\\"""",
+        r"""Reg.exe add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\dmwappushservice\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\DiagTrack\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""sc config \\\"dmwappushservice\\\" start=disabled""",
+        r"""sc stop \\\"dmwappushservice\\\"""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\dmwappushservice\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\DiagTrack\\\" /v \\\"Start\\\" /t REG_DWORD /d 4 /f""",
+        r"""net stop diagnosticshub.standardcollector.service""",
+        r"""sc config diagnosticshub.standardcollector.service start= Disabled""",
+        r"""sc config \\\"diagnosticshub.standardcollector.service\\\" start=disabled""",
+        r"""sc config diagnosticshub.standardcollector.service start=disabled""",
+        r"""sc config diagnosticshub.standardcollector.service start= disabled""",
+        r"""sc config \\\"diagnosticshub.standardcollector.service\\\" start= disabled""",
+        r"""sc stop diagnosticshub.standardcollector.service""",
+        r"""sc stop \\\"diagnosticshub.standardcollector.service\\\"""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"DiagTrackStatus\\\" /t REG_DWORD /d \\\"2\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"ShowedToastAtLevel\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"UploadPermissionReceived\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"DiagTrackAuthorization\\\" /t REG_DWORD /d \\\"775\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"ShowedToastAtLevel\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /V \\\"ShowedToastAtLevel\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\\EventTranscriptKey\\\" /V \\\"EnableEventTranscript\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"ShowedToastAtLevel\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Diagnostics\\\\DiagTrack\\\" /v \\\"ShowedToastAtLevel\\\" /t REG_DWORD /d 1 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"DoNotShowFeedbackNotifications\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowCommercialDataPipeline\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowDeviceNameInTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"LimitEnhancedDiagnosticDataWindowsAnalytics\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"MicrosoftEdgeDataOptIn\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableThirdPartySuggestions\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableWindowsConsumerFeatures\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableSoftLanding\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AdvertisingInfo\\\" /v \\\"DisabledByGroupPolicy\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\AdvertisingInfo\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\AdvertisingInfo\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableInventory\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"AITEnable\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableUAR\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"PublishUserActivities\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"EnableActivityFeed\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\SQMClient\\\\Windows\\\" /v \\\"CEIPEnable\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\SQMClient\\\\Reliability\\\" /v \\\"CEIPEnable\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\SQMClient\\\\Reliability\\\" /v \\\"SqmLoggerRunning\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\SQMClient\\\\Windows\\\" /v \\\"DisableOptinExperience\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableLocation\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableLocationScripting\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableSensors\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableWindowsLocationProvider\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Peernet\\\" /v \\\"Disabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Biometrics\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Wow6432Node\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\AdvertisingInfo\\\" /v \\\"Enabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableWindowsConsumerFeatures\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableLocation\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"EnableActivityFeed\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\SQMClient\\\\Windows\\\" /v \\\"CEIPEnable\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SYSTEM\\\" /v \\\"PublishUserActivities\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowDeviceNameInTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"MaxTelemetryAllowed\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"DoNotShowFeedbackNotifications\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AdvertisingInfo\\\" /v \\\"DisabledByGroupPolicy\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableSoftLanding\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v AllowTelemetry /t REG_DWORD /d 0 /f 2""",
+        r"""reg add \\\"HKCU\\\\Software\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"AllowLinguisticDataCollection\\\" /t REG_DWORD /d 0 /f 2""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableTailoredExperiencesWithDiagnosticData\\\" /t REG_DWORD /d 1 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Wow6432Node\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Personalization\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\BrowserSettings\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Credentials\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Accessibility\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Windows\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\" /v \\\"SyncPolicy\\\" /t REG_DWORD /d \\\"5\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Personalization\\\" /V \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\BrowserSettings\\\" /V \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Credentials\\\" /V \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Accessibility\\\" /V \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Windows\\\" /V \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\AdvertisingInfo\\\" /V \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /V \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /V \\\"PublishUserActivities\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\AdvertisingInfo\\\" /v \\\"DisabledByGroupPolicy\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"EnableActivityFeed\\\" /t REG_DWORD /d 0 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"PublishUserActivities\\\" /t REG_DWORD /d 0 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"DoNotShowFeedbackNotifications\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\" /v \\\"SyncPolicy\\\" /t Reg_DWORD /d \\\"5\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Accessibility\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\AppSync\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\BrowserSettings\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Credentials\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"\\\"0\\\"\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\DesktopTheme\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Language\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\PackageState\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Personalization\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\StartLayout\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SettingSync\\\\Groups\\\\Windows\\\" /v \\\"Enabled\\\" /t Reg_DWORD /d \\\"0\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableAppSyncSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableAppSyncSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"1\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableApplicationSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableApplicationSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"1\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableCredentialsSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableCredentialsSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableDesktopThemeSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableDesktopThemeSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisablePersonalizationSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisablePersonalizationSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableStartLayoutSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableStartLayoutSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableWebBrowserSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableWebBrowserSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableWindowsSettingSync\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableWindowsSettingSyncUserOverride\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\SQMClient\\\\Windows\\\" /v \\\"CEIPEnable\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\SQMClient\\\\Windows\\\" /v \\\"SqmLoggerRunning\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\SQMClient\\\\IE\\\" /v \\\"SqmLoggerRunning\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\AdvertisingInfo\\\" /v \\\"Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\Software\\\\Wow6432Node\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableWindowsConsumerFeatures\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableLocation\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowDeviceNameInTelemetry\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"MaxTelemetryAllowed\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\CloudContent\\\" /v \\\"DisableTailoredExperiencesWithDiagnosticData\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableLocationScripting\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableWindowsLocationProvider\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"AITEnable\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableInventory\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisablePCA\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableUAR\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableEngine\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisablePropPage\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"AllowTelemetry\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\DataCollection\\\" /v \\\"MaxTelemetryAllowed\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\DataCollection\\\" /v \\\"DoNotShowFeedbackNotifications\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AdvertisingInfo\\\" /v \\\"DisabledByGroupPolicy\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableEngine\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisablePropPage\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"AITEnable\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableInventory\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisablePCA\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\AppCompat\\\" /v \\\"DisableUAR\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"EnableActivityFeed\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"PublishUserActivities\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableLocationScripting\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\LocationAndSensors\\\" /v \\\"DisableWindowsLocationProvider\\\" /t REG_DWORD /d 1 /f""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\SettingSync\\\\NetworkStateChangeTask\\\" /Disable""",
+        r"""Reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\SettingSync\\\" /v \\\"DisableSyncOnPaidNetwork\\\" /t Reg_DWORD /d \\\"2\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Privacy\\\" /v \\\"TailoredExperiencesWithDiagnosticDataEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Privacy\\\" /v \\\"TailoredExperiencesWithDiagnosticDataEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Privacy\\\" /V \\\"TailoredExperiencesWithDiagnosticDataEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Privacy\\\" /v \\\"TailoredExperiencesWithDiagnosticDataEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""Reg.exe add \\\"HKCU\\\\Software\\\\Microsoft\\\\Office\\\\Common\\\\ClientTelemetry\\\" /v \\\"DisableTelemetry\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\Software\\\\Microsoft\\\\Office\\\\Common\\\\ClientTelemetry\\\" /v \\\"SendTelemetry\\\" /t REG_DWORD /d \\\"3\\\" /f""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Office\\\\OfficeTelemetryAgentFallBack2016\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Office\\\\OfficeTelemetryAgentLogOn2016\\\" /Disable""",
+        r"""powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"Get-ScheduledTask | Where-Object {$_.TaskName -match \\'Diag|Telemetry|Customer Experience|OfficeClickToRun\\'} | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue\\\"""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Office\\\\16.0\\\\Common\\\\ClientTelemetry\\\" /v \\\"DisableTelemetry\\\" /t REG_DWORD /d 1 /f""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Office\\\\OfficeTelemetryAgentFallBack2016\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Office\\\\OfficeTelemetryAgentLogOn2016\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Office\\\\OfficeTelemetryAgentLogOn\\\"""",
+        r"""schtasks /change /TN \\\"\\\\Microsoft\\\\Office\\\\OfficeTelemetryAgentLogOn\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoftd\\\\Office\\\\OfficeTelemetryAgentFallBack\\\"""",
+        r"""schtasks /change /TN \\\"\\\\Microsoftd\\\\Office\\\\OfficeTelemetryAgentFallBack\\\" /Disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Feedback\\\\Siuf\\\\DmClient\\\" /disable""",
+        r"""schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Feedback\\\\Siuf\\\\DmClientOnScenarioDownload\\\" /disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Feedback\\\\Siuf\\\\DmClient\\\" /Disable""",
+        r"""schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Feedback\\\\Siuf\\\\DmClientOnScenarioDownload\\\" /Disable""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Feedback\\\\Siuf\\\\DmClient\\\"""",
+        r"""schtasks /end /tn \\\"\\\\Microsoft\\\\Windows\\\\Feedback\\\\Siuf\\\\DmClientOnScenarioDownload\\\"""",
+        r"""PowerShell -Command \\\"Get-AppxPackage *ContentDeliveryManager* | Remove-AppxPackage\\\"""",
+        r"""\"PowerShell -ExecutionPolicy Unrestricted -Command \\\"$package = Get-AppxPackage -AllUsers \\'Microsoft.Windows.ContentDeliveryManager\\'; if (LOCALAPPDATA\\\\Packages\\\\$($package.PackageFamilyName""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Search\\\" /v \\\"AllowSearchToUseLocation\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Feeds\\\" /v \\\"EnableFeeds\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Search\\\" /v \\\"AllowSearchToUseLocation\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\MSDeploy\\\\3\\\" /v \\\"EnableTelemetry\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\\TrainedDataStore\\\" /v \\\"HarvestContacts\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"NumberOfSIUFInPeriod\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg delete \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"PeriodInNanoSeconds\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableFileSyncNGSC\\\" /t REG_DWORD /d 1 /f 2""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"ContentDeliveryAllowed\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SilentInstalledAppsEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\DeliveryOptimization\\\\Config\\\" /v \\\"DODownloadMode\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKCU\\\\Software\\\\Microsoft\\\\Clipboard\\\" /v \\\"EnableClipboardHistory\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Feeds\\\" /v \\\"EnableFeeds\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\Software\\\\Microsoft\\\\VisualStudio\\\\Telemetry\\\" /v \\\"TurnOffSwitch\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\current\\\\device\\\\System\\\" /v \\\"AllowExperimentation\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\System\\\\AllowExperimentation\\\" /v \\\"value\\\" /t REG_DWORD /d 0 /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"RestrictImplicitInkCollection\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"RestrictImplicitTextCollection\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\\TrainedDataStore\\\" /v \\\"HarvestContacts\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKU\\\\S-1-5-20\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\DeliveryOptimization\\\\Settings\\\" /v \\\"DownloadMode\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SilentInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SystemPaneSuggestionsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SoftLandingEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"RotatingLockScreenEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\" /v \\\"TelemetrySalt\\\" /t REG_DWORD /d \\\"2\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\" /v \\\"FirstRunTelemetryComplete\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\DeliveryOptimization\\\\Config\\\" /v \\\"DownloadMode\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SearchSettings\\\" /v \\\"IsDeviceSearchHistoryEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338393Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-353694Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-353696Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-310093Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338394Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338396Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"NumberOfSIUFInPeriod\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Microsoft\\\\PolicyManager\\\\default\\\\WiFi\\\\AllowWiFiHotSpotReporting\\\" /v \\\"value\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SilentInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SystemPaneSuggestionsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SoftLandingEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"RotatingLockScreenEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"RotatingLockScreenOverlayEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SubscribedContent-310093Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SubscribedContent-338393Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SubscribedContent-353694Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /V \\\"SubscribedContent-353696Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /V \\\"RestrictImplicitInkCollection\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /V \\\"RestrictImplicitTextCollection\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\\TrainedDataStore\\\" /V \\\"HarvestContacts\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /V \\\"NumberOfSIUFInPeriod\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg.exe add \\\"HKEY_CURRENT_USER\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /V \\\"PeriodInNanoSeconds\\\" /t REG_SZ /d \\\"-\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableFileSync\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableFileSyncNGSC\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableLibrariesDefaultSaveToOneDrive\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\current\\\\device\\\\System\\\" /v \\\"AllowExperimentation\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\System\\\\AllowExperimentation\\\" /v \\\"value\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Multimedia\\\\SystemProfile\\\\Tasks\\\\Telemetry\\\" /v Affinity /t REG_DWORD /d /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Feeds\\\" /v \\\"EnableFeeds\\\" /t REG_DWORD /d 0 /f""",
+        r"""REG ADD \\\"HKEY_CURRENT_USER\\\\Software\\\\Microsoft\\\\VisualStudio\\\\Telemetry\\\" /v \\\"TurnOffSwitch\\\" /t REG_DWORD /d 1 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\current\\\\device\\\\System\\\" /v \\\"AllowExperimentation\\\" /t REG_DWORD /d 0 /f""",
+        r"""REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\System\\\\AllowExperimentation\\\" /v \\\"value\\\" /t REG_DWORD /d 0 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\current\\\\device\\\\System\\\" /v \\\"AllowExperimentation\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\System\\\\AllowExperimentation\\\" /v \\\"value\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Feeds\\\" /v \\\"EnablingFeeds\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"EnablingActivityFeed\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"PreInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"OemPreInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"ContentDeliveryAllowed\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContentEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"PreInstalledAppsEverEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"PeriodInNanoSeconds\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\MediaPlayer\\\\Preferences\\\" /v \\\"UsageTracking\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\DeliveryOptimization\\\\Config\\\" /v DODownloadMode /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\PolicyManager\\\\default\\\\WiFi\\\\AllowWiFiHotSpotReporting\\\" /v value /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\Software\\\\Microsoft\\\\PolicyManager\\\\default\\\\WiFi\\\\AllowWiFiHotSpotReporting\\\" /v \\\"value\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\DeliveryOptimization\\\\Config\\\" /v \\\"DownloadMode\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"ContentDeliveryAllowed\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SilentInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SystemPaneSuggestionsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"PreInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"PreInstalledAppsEverEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"OemPreInstalledAppsEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338388Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338389Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338387Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-353698Enabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SoftLandingEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"RotatingLockScreenEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"RotatingLockScreenOverlayEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContentEnabled\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"RestrictImplicitInkCollection\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"RestrictImplicitTextCollection\\\" /t REG_DWORD /d \\\"1\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"PeriodInNanoSeconds\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"OemPreInstalledAppsEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"PreInstalledAppsEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"PreInstalledAppsEverEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338387Enabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338388Enabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-338389Enabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContent-353698Enabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SystemPaneSuggestionsEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SoftLandingEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"RotatingLockScreenEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"RotatingLockScreenOverlayEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\ContentDeliveryManager\\\" /v \\\"SubscribedContentEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"RestrictImplicitInkCollection\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\" /v \\\"RestrictImplicitTextCollection\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\InputPersonalization\\\\TrainedDataStore\\\" /v \\\"HarvestContacts\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"NumberOfSIUFInPeriod\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Siuf\\\\Rules\\\" /v \\\"PeriodInNanoSeconds\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableFileSyncNGSC\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableFileSync\\\" /t REG_DWORD /d 1 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\System\\\" /v \\\"AllowClipboardHistory\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SearchSettings\\\" /v \\\"IsMSACloudSearchEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKCU\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\SearchSettings\\\" /v \\\"IsDeviceSearchHistoryEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Edge\\\" /v \\\"PersonalizationReportingEnabled\\\" /t REG_DWORD /d 0 /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\OneDrive\\\" /v \\\"DisableMeteredNetworkFileSync\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""Reg.exe add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Search\\\" /v \\\"AllowSearchToUseLocation\\\" /t REG_DWORD /d 0 /f""",
+        r"""Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Search\\\" /v \\\"AllowSearchToUseLocation\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Search\\\" /v \\\"AllowSearchToUseLocation\\\" /t REG_DWORD /d \\\"0\\\" /f""",
+        r"""reg add \\\"HKLM\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Windows Search\\\" /v \\\"AllowSearchToUseLocation\\\" /t REG_DWORD /d 0 /f""",
+    ]
+    
+    # Create comprehensive backup BEFORE applying optimizations
+    print(f"Creating comprehensive backup for privacy...")
+    backup_info = create_comprehensive_backup("privacy", commands_to_apply)
+    print(f"Backup created: {backup_info['backed_up_items']} items backed up")
+    print(f"Backup directory: {backup_info['backup_directory']}")
+    
+    # Now apply all optimizations
+    print(f"Applying privacy optimizations...")
+    for cmd in commands_to_apply:
+        run(cmd)
+    
+    print(f"{category_name.title()} optimizations completed!")
+    return backup_info
 
-    # Disable telemetry
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\" /v \"AllowTelemetry\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\" /v \"AllowDeviceNameInTelemetry\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection\" /v \"AllowTelemetry\" /t REG_DWORD /d \"0\" /f")
-    run("Reg.exe add \"HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection\" /v \"AllowTelemetry\" /t REG_DWORD /d \"0\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection\" /v \"AllowDeviceNameInTelemetry\" /t REG_DWORD /d \"0\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection\" /v \"MaxTelemetryAllowed\" /t REG_DWORD /d \"1\" /f")
-    run("REG ADD \"HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\" /v \"AllowTelemetry\" /t REG_DWORD /d 0 /f")
 
-    # Disable advertising ID
-    run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo\" /v \"Enabled\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo\" /v \"DisabledByGroupPolicy\" /t REG_DWORD /d 1 /f")
+def get_backup_data():
+    return {'backup_created': True}
 
-    # Disable cloud content
-    run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager\" /v \"SilentInstalledAppsEnabled\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager\" /v \"SubscribedContent-338393Enabled\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager\" /v \"SubscribedContent-353694Enabled\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager\" /v \"SubscribedContent-353696Enabled\" /t REG_DWORD /d 0 /f")
 
-    # Disable location tracking
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location\" /v \"Value\" /t REG_SZ /d \"Deny\" /f")
-    run(
-        "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}\" /v \"SensorPermissionState\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\lfsvc\\Service\\Configuration\" /v \"Status\" /t REG_DWORD /d 0 /f")
-
-    # Disable feedback
-    run("reg add \"HKCU\\Software\\Microsoft\\Siuf\\Rules\" /v \"NumberOfSIUFInPeriod\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\" /v \"DoNotShowFeedbackNotifications\" /t REG_DWORD /d 1 /f")
-
-    # Disable camera and microphone access
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam\" /v \"Value\" /t REG_SZ /d \"Deny\" /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone\" /v \"Value\" /t REG_SZ /d \"Deny\" /f")
-
-    # Disable activity history
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" /v \"EnableActivityFeed\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" /v \"PublishUserActivities\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" /v \"UploadUserActivities\" /t REG_DWORD /d 0 /f")
-
-    # Disable Windows Error Reporting
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\" /v \"Disabled\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\" /v \"DontSendAdditionalData\" /t REG_DWORD /d 1 /f")
-
-    # Disable Customer Experience Improvement Program
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip\" /disable")
-
-    # Disable Windows tips
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent\" /v \"DisableSoftLanding\" /t REG_DWORD /d 1 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent\" /v \"DisableWindowsConsumerFeatures\" /t REG_DWORD /d 1 /f")
+def restore_from_backup_data(backup_dir):
+    if not backup_dir:
+        return False
+    return restore_from_comprehensive_backup(backup_dir)
