@@ -94,8 +94,8 @@ def apply_power():
     # Create comprehensive backup BEFORE applying optimizations
     print(f"Creating comprehensive backup for power...")
     backup_info = create_comprehensive_backup("power", commands_to_apply)
-    print(f"Backup created: {{backup_info['backed_up_items']}} items backed up")
-    print(f"Backup directory: {{backup_info['backup_directory']}}")
+    print(f"Backup created: {backup_info['backed_up_items']} items backed up")
+    print(f"Backup directory: {backup_info['backup_directory']}")
     
     # Now apply all optimizations
     print(f"Applying power optimizations...")
@@ -107,7 +107,7 @@ def apply_power():
 
 
 def get_backup_data():
-    return {{'backup_created': True}}
+    return {'backup_created': True}
 
 
 def restore_from_backup_data(backup_dir):

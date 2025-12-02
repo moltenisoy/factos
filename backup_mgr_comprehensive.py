@@ -223,10 +223,23 @@ def create_comprehensive_backup(category_name, commands):
                     'new_data': reg_info.get('data')
                 })
                 
-                # Add to .reg file
+                # Add to .reg file in proper Windows format
                 reg_file_lines.append(f'[{reg_info["key"]}]')
                 value_type = current_value.get('type', 'REG_SZ')
-                reg_file_lines.append(f'"{reg_info["value_name"]}"={value_type}:{current_value.get("data", "")}')
+                data_value = current_value.get('data', '')
+                
+                # Format based on type
+                if 'DWORD' in value_type.upper():
+                    # DWORD format: dword:00000001
+                    try:
+                        dword_val = int(data_value, 16) if isinstance(data_value, str) and data_value.startswith('0x') else int(data_value)
+                        reg_file_lines.append(f'"{reg_info["value_name"]}"=dword:{dword_val:08x}')
+                    except:
+                        reg_file_lines.append(f'"{reg_info["value_name"]}"=dword:00000000')
+                else:
+                    # String format: "value"
+                    reg_file_lines.append(f'"{reg_info["value_name"]}"="{data_value}"')
+                
                 reg_file_lines.append('')
                 
                 backup_data['backed_up_items'] += 1
@@ -256,11 +269,10 @@ def create_comprehensive_backup(category_name, commands):
                 })
                 backup_data['backed_up_items'] += 1
     
-    # Save .reg file
-    with open(reg_file_path, 'w', encoding='utf-16le') as f:
-        # Write BOM for UTF-16 LE
-        f.write('\ufeff')
-        f.write('\n'.join(reg_file_lines))
+    # Save .reg file with UTF-16 LE encoding (Windows standard)
+    with open(reg_file_path, 'w', encoding='utf-16') as f:
+        # utf-16 encoding includes BOM automatically
+        f.write('\r\n'.join(reg_file_lines))
     
     # Save JSON metadata
     metadata_file = backup_dir / "backup_metadata.json"

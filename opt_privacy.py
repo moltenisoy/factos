@@ -346,8 +346,8 @@ def apply_privacy():
     # Create comprehensive backup BEFORE applying optimizations
     print(f"Creating comprehensive backup for privacy...")
     backup_info = create_comprehensive_backup("privacy", commands_to_apply)
-    print(f"Backup created: {{backup_info['backed_up_items']}} items backed up")
-    print(f"Backup directory: {{backup_info['backup_directory']}}")
+    print(f"Backup created: {backup_info['backed_up_items']} items backed up")
+    print(f"Backup directory: {backup_info['backup_directory']}")
     
     # Now apply all optimizations
     print(f"Applying privacy optimizations...")
@@ -359,7 +359,7 @@ def apply_privacy():
 
 
 def get_backup_data():
-    return {{'backup_created': True}}
+    return {'backup_created': True}
 
 
 def restore_from_backup_data(backup_dir):
