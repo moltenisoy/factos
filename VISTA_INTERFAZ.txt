@@ -1,0 +1,83 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                        OPTIMIZADOR DE WINDOWS                                  ║
+╠════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                ║
+║  Seleccione las Opciones de Optimización                                      ║
+║                                                                                ║
+║  ┌────────────────────────────────────────────────────────────────────────┐  ║
+║  │      ✓ Aplicar Todas las Optimizaciones                               │  ║
+║  └────────────────────────────────────────────────────────────────────────┘  ║
+║                                                                                ║
+║  ╔══════════════════════════════════════════════════════════════════════╗ ▲  ║
+║  ║                                                                      ║ █  ║
+║  ║  ┌──────────────────────────────────────────────────────────────┐  ║ █  ║
+║  ║  │  Red y Conectividad                             [ROJO/VERDE] │  ║ █  ║
+║  ║  │  Optimiza TCP/IP, DNS, firewall y configuraciones de red    │  ║ │  ║
+║  ║  │  para mejorar velocidad y reducir latencia de conexión      │  ║ │  ║
+║  ║  └──────────────────────────────────────────────────────────────┘  ║ │  ║
+║  ║                                                                      ║ │  ║
+║  ║  ┌──────────────────────────────────────────────────────────────┐  ║ │  ║
+║  ║  │  Gráficos y Rendimiento Visual                 [ROJO/VERDE] │  ║ │  ║
+║  ║  │  Mejora GPU, pantalla, DWM y efectos visuales para          │  ║ │  ║
+║  ║  │  maximizar FPS y respuesta en juegos y aplicaciones gráficas│  ║ │  ║
+║  ║  └──────────────────────────────────────────────────────────────┘  ║ │  ║
+║  ║                                                                      ║ │  ║
+║  ║  ┌──────────────────────────────────────────────────────────────┐  ║ │  ║
+║  ║  │  Energía y CPU                                  [ROJO/VERDE] │  ║ │  ║
+║  ║  │  Configura gestión de energía y CPU para máximo rendimiento,│  ║ █  ║
+║  ║  │  desactiva ahorro de energía y optimiza procesador          │  ║ █  ║
+║  ║  └──────────────────────────────────────────────────────────────┘  ║ █  ║
+║  ║                                                                      ║ │  ║
+║  ║  ┌──────────────────────────────────────────────────────────────┐  ║ │  ║
+║  ║  │  Privacidad y Seguridad                         [ROJO/VERDE] │  ║ │  ║
+║  ║  │  Desactiva telemetría, diagnósticos y seguimiento de Windows,│  ║ │  ║
+║  ║  │  protege tu privacidad deshabilitando recopilación de datos  │  ║ │  ║
+║  ║  └──────────────────────────────────────────────────────────────┘  ║ │  ║
+║  ║                                                                      ║ │  ║
+║  ║  ┌──────────────────────────────────────────────────────────────┐  ║ │  ║
+║  ║  │  Servicios de Windows                           [ROJO/VERDE] │  ║ │  ║
+║  ║  │  Deshabilita servicios innecesarios de Windows para         │  ║ │  ║
+║  ║  │  liberar recursos del sistema y mejorar velocidad general   │  ║ │  ║
+║  ║  └──────────────────────────────────────────────────────────────┘  ║ │  ║
+║  ║                                                                      ║ │  ║
+║  ║  ┌──────────────────────────────────────────────────────────────┐  ║ │  ║
+║  ║  │  Almacenamiento y Disco                         [ROJO/VERDE] │  ║ │  ║
+║  ║  │  Optimiza SSD, disco, indexación y compresión para          │  ║ │  ║
+║  ║  │  mejorar tiempos de lectura/escritura y vida útil del disco │  ║ ▼  ║
+║  ║  └──────────────────────────────────────────────────────────────┘  ║    ║
+║  ║                                                                      ║    ║
+║  ╚══════════════════════════════════════════════════════════════════════╝    ║
+║                                                                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+LEYENDA:
+--------
+[ROJO/VERDE] = Toggle Switch
+  - ROJO (izquierda) = Desactivado
+  - VERDE (derecha) = Activado
+
+CARACTERÍSTICAS:
+---------------
+✓ Ventana centrada automáticamente en la pantalla
+✓ Todo el texto en español
+✓ 6 categorías de optimización con descripciones de 2 líneas
+✓ Toggle switches individuales para cada categoría
+✓ Barra de desplazamiento funcional
+✓ Botón para aplicar todas las optimizaciones a la vez
+✓ Tema oscuro profesional
+
+DIMENSIONES:
+-----------
+- Ancho: 1000px
+- Alto: 750px
+- Posición: Centrada en la pantalla
+
+COLORES:
+--------
+- Fondo principal: #1c2833 (gris oscuro)
+- Tarjetas: #2d3e50 (azul oscuro)
+- Texto principal: #ecf0f1 (blanco humo)
+- Texto secundario: #95a5a6 (gris claro)
+- Switch ON: #27ae60 (verde)
+- Switch OFF: #c0392b (rojo)
+- Botón principal: #2980b9 (azul)
