@@ -5,6 +5,12 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QColor
 import opt_full
+import opt_network
+import opt_graphics
+import opt_power
+import opt_privacy
+import opt_services
+import opt_storage
 import backup_mgr
 
 def is_admin():
@@ -73,7 +79,8 @@ class OptimizationCard(QFrame):
         self.backup_file = backup_file
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
         self.setLineWidth(2)
-        self.setFixedHeight(100)
+        self.setMinimumHeight(110)
+        self.setMaximumHeight(130)
         self.setStyleSheet("""
             QFrame {
                 background-color: #2d3e50;
@@ -116,8 +123,11 @@ class OptimizationCard(QFrame):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Windows Optimizer - All Optimizations")
-        self.setGeometry(100, 100, 1000, 750)
+        self.setWindowTitle("Optimizador de Windows")
+        
+        # Center window on screen
+        self.setFixedSize(1000, 750)
+        self.center_on_screen()
         self.setStyleSheet("background-color: #1c2833;")
         
         central_widget = QWidget()
@@ -127,7 +137,7 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(30, 20, 30, 20)
         main_layout.setSpacing(20)
         
-        header = QLabel("Select Optimization Options")
+        header = QLabel("Seleccione las Opciones de Optimización")
         header_font = QFont()
         header_font.setPointSize(16)
         header_font.setBold(True)
@@ -136,7 +146,7 @@ class MainWindow(QMainWindow):
         header.setAlignment(Qt.AlignLeft)
         main_layout.addWidget(header)
         
-        self.apply_all_btn = QPushButton("✓ Apply All Optimizations")
+        self.apply_all_btn = QPushButton("✓ Aplicar Todas las Optimizaciones")
         self.apply_all_btn.setFixedHeight(50)
         self.apply_all_btn.setStyleSheet("""
             QPushButton {
@@ -185,7 +195,12 @@ class MainWindow(QMainWindow):
         scroll_layout.setSpacing(12)
         
         self.categories = [
-            ("All System Optimizations", "All Windows optimizations from windows_optimizer.py (2764 commands)", "backup_opt_full.json", opt_full.apply_all),
+            ("Red y Conectividad", "Optimiza TCP/IP, DNS, firewall y configuraciones de red para\nmejorar velocidad y reducir latencia de conexión", "backup_opt_network.json", opt_network.apply_network),
+            ("Gráficos y Rendimiento Visual", "Mejora GPU, pantalla, DWM y efectos visuales para\nmaximizar FPS y respuesta en juegos y aplicaciones gráficas", "backup_opt_graphics.json", opt_graphics.apply_all),
+            ("Energía y CPU", "Configura gestión de energía y CPU para máximo rendimiento,\ndesactiva ahorro de energía y optimiza procesador", "backup_opt_power.json", opt_power.apply_power),
+            ("Privacidad y Seguridad", "Desactiva telemetría, diagnósticos y seguimiento de Windows,\nprotege tu privacidad deshabilitando recopilación de datos", "backup_opt_privacy.json", opt_privacy.apply_privacy),
+            ("Servicios de Windows", "Deshabilita servicios innecesarios de Windows para\nliberar recursos del sistema y mejorar velocidad general", "backup_opt_services.json", opt_services.apply_services),
+            ("Almacenamiento y Disco", "Optimiza SSD, disco, indexación y compresión para\nmejorar tiempos de lectura/escritura y vida útil del disco", "backup_opt_storage.json", opt_storage.apply_storage),
         ]
         
         for title, desc, backup_file, apply_func in self.categories:
@@ -201,6 +216,13 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(main_layout)
         
         self.workers = []
+    
+    def center_on_screen(self):
+        """Center the window on the screen"""
+        screen = QApplication.desktop().screenGeometry()
+        x = (screen.width() - self.width()) // 2
+        y = (screen.height() - self.height()) // 2
+        self.move(x, y)
     
     def toggle_optimization(self, backup_file, is_enable):
         apply_func = None
@@ -227,7 +249,7 @@ class MainWindow(QMainWindow):
     
     def apply_all(self):
         self.apply_all_btn.setEnabled(False)
-        self.apply_all_btn.setText("Applying...")
+        self.apply_all_btn.setText("Aplicando...")
         
         for title, desc, backup_file, apply_func in self.categories:
             try:
@@ -243,7 +265,7 @@ class MainWindow(QMainWindow):
     
     def on_apply_all_finished(self):
         self.apply_all_btn.setEnabled(True)
-        self.apply_all_btn.setText("✓ Apply All Optimizations")
+        self.apply_all_btn.setText("✓ Aplicar Todas las Optimizaciones")
 
 def run():
     if not is_admin():
