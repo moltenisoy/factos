@@ -216,22 +216,32 @@ class MainWindow(QMainWindow):
                 break
         
         if module:
-            worker = OptimizationWorker(module, category_name, is_enable)
-            worker.finished.connect(lambda success: self.on_optimization_finished(success, category_name))
-            self.workers.append(worker)
-            worker.start()
+            try:
+                worker = OptimizationWorker(module, category_name, is_enable)
+                worker.finished.connect(lambda success: self.on_optimization_finished(success, category_name))
+                self.workers.append(worker)
+                worker.start()
+            except:
+                pass
     
     def on_optimization_finished(self, success, category_name):
-        pass
+        if self.workers:
+            try:
+                self.workers = [w for w in self.workers if w.isRunning()]
+            except:
+                pass
     
     def apply_all(self):
         for title, desc, cat_name, module in self.categories:
-            if not manager.has_backup(cat_name):
-                backup_data = module.get_backup_data()
-                manager.save_backup(cat_name, backup_data)
-                worker = OptimizationWorker(module, cat_name, True)
-                worker.start()
-                self.workers.append(worker)
+            try:
+                if not manager.has_backup(cat_name):
+                    backup_data = module.get_backup_data()
+                    manager.save_backup(cat_name, backup_data)
+                    worker = OptimizationWorker(module, cat_name, True)
+                    worker.start()
+                    self.workers.append(worker)
+            except:
+                pass
 
 def run():
     if not is_admin():
