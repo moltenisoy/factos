@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from backup_mgr import create_full_backup, restore_from_backup
 
 BACKUP_FILE = 'backup_opt_full.json'
 
@@ -20,6 +21,9 @@ def run(cmd):
 def apply_all():
     if os.name != "nt":
         sys.exit(1)
+
+    # Create comprehensive backup before applying optimizations
+    backup_info = create_full_backup("full")
 
     run("netsh int teredo set state disabled")
     run("netsh int tcp set heuristics Disabled")

@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from backup_mgr import create_full_backup, restore_from_backup
 
 
 def run(cmd):
@@ -16,69 +17,58 @@ def run(cmd):
 
 
 def apply_storage():
-    """Optimizaciones de almacenamiento: SSD, disco, indexación y compresión"""
+    """Optimizaciones de almacenamiento: SSD, indexación y rendimiento de disco"""
     if os.name != "nt":
         sys.exit(1)
 
-    # Disable disk defragmentation
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Defrag\\ScheduledDefrag\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\DiskCleanup\\SilentCleanup\" /disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\Defrag\\ScheduledOptimize\" /disable")
-    run("schtasks /Change /TN \"Microsoft\\Windows\\Defrag\\ScheduledDefrag\" /Disable")
-    run("schtasks /Change /TN \"Microsoft\\Windows\\DiskCleanup\\SilentCleanup\" /Disable")
+    # Create backup before applying storage optimizations
+    backup_info = create_full_backup("storage")
+    
+    # Apply storage optimizations
+    run("schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Defrag\\\\ScheduledDefrag\\\" /disable")
+    run("schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\DiskCleanup\\\\SilentCleanup\\\" /disable")
+    run("schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\Defrag\\\\ScheduledOptimize\\\" /disable")
+    run("schtasks /change /tn \\\"\\\\Microsoft\\\\Windows\\\\EDP\\\\StorageCardEncryption Task\\\" /disable")
+    run("reg delete \\\"HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\MyComputer\\\\DefragPath\\\" /f")
+    run("Reg.exe add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\EnhancedStorageDevices\\\" /v \\\"TCGSecurityActivationDisabled\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\MyComputer\\\\DefragPath\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\SystemSettings\\\\SettingId\\\\SystemSettings_Maps_Storage_Manage\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\SystemSettings\\\\SettingId\\\\SystemSettings_Maps_Storage_Migration\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\SystemSettings\\\\SettingId\\\\SystemSettings_Maps_Storage_Migration_Cancel\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\SystemSettings\\\\SettingId\\\\SystemSettings_Maps_Storage_Migration_Confirmation\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\SystemSettings\\\\SettingId\\\\SystemSettings_Maps_Storage_Migration_Error\\\" /f")
+    run("REG DELETE \\\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\SystemSettings\\\\SettingId\\\\SystemSettings_Maps_Storage_Options\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"QueueDepth\\\" /t REG_DWORD /d \\\"32\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"CompletionQueueSize\\\" /t REG_DWORD /d \\\"64\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"SubmissionQueueSize\\\" /t REG_DWORD /d \\\"64\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"IdlePowerMode\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"AutonomousPowerStateTransition\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"IoQueuesPerCore\\\" /t REG_DWORD /d \\\"2\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"MaxIoQueues\\\" /t REG_DWORD /d \\\"16\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"EnableLatencyControl\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"WriteCacheEnabled\\\" /t REG_DWORD /d \\\"1\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"EnableVolatileWriteCache\\\" /t REG_DWORD /d \\\"1\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"ForcedPhysicalSectorSizeInBytes\\\" /t REG_MULTI_SZ /d \\\"* 4096\\\" /f")
+    run("reg add \\\"HKLM\\\\System\\\\ControlSet001\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"DmaRemappingCompatible\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("reg add \\\"HKLM\\\\System\\\\ControlSet001\\\\Services\\\\stornvme\\\\Parameters\\\" /v \\\"DmaRemappingCompatible\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("reg add \\\"HKLM\\\\Software\\\\Policies\\\\Microsoft\\\\Windows\\\\EnhancedStorageDevices\\\" /v \\\"TCGSecurityActivationDisabled\\\" /t REG_DWORD /d \\\"0\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\stornvme\\\\Parameters\\\\Device\\\" /v \\\"DisableThrottling\\\" /t REG_DWORD /d \\\"1\\\" /f")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Defrag\\\\ScheduledDefrag\\\" /Disable")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\DiskCleanup\\\\SilentCleanup\\\" /Disable")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Storage Tiers Management\\\\Storage Tiers Management Initialization\\\" /Disable")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Sysmain\\\\ResPriStaticDbSync\\\" /Disable")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\Sysmain\\\\WsSwapAssessmentTask\\\" /Disable")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WOF\\\\WIM-Hash-Management\\\" /Disable")
+    run("schtasks /Change /TN \\\"Microsoft\\\\Windows\\\\WOF\\\\WIM-Hash-Validation\\\" /Disable")
+    run("REG ADD \\\"HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\WSearch\\\" /v \\\"Start\\\" /t REG_DWORD /d 3 /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\SysMain\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f")
+    run("reg add \\\"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\WSearch\\\" /v \\\"Start\\\" /t REG_DWORD /d \\\"4\\\" /f")
 
-    # Disable disk diagnostics
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\DiskFootprint\\Diagnostics\" /Disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector\" /Disable")
-    run("schtasks /change /tn \"\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticResolver\" /Disable")
 
-    # Disable Superfetch/Prefetch
-    run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"Disable-MMAgent -ApplicationLaunchPrefetching -OperationAPI -PageCombining -ApplicationPreLaunch\"")
-    run("schtasks /Change /TN \"Microsoft\\Windows\\Sysmain\\ResPriStaticDbSync\" /Disable")
-    run("schtasks /Change /TN \"Microsoft\\Windows\\Sysmain\\WsSwapAssessmentTask\" /Disable")
-    run("sc config \"SysMain\" start=disabled")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\SysMain\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
+def get_backup_data():
+    return {'backup_created': True}
 
-    # Disable Windows Search indexing
-    run("sc config \"WSearch\" start=disabled")
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\WSearch\" /v \"Start\" /t REG_DWORD /d \"4\" /f")
 
-    # Disable low disk space checks
-    run("reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" /v \"NoLowDiskSpaceChecks\" /t REG_DWORD /d 1 /f")
-    run("Reg.exe add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" /v \"NoLowDiskSpaceChecks\" /t REG_DWORD /d \"1\" /f")
-    run("REG ADD \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" /v \"NoLowDiskSpaceChecks\" /t REG_DWORD /d 1 /f")
-    run("Reg.exe add \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.LowDisk\" /v \"Enabled\" /t REG_DWORD /d \"0\" /f")
-
-    # Disable disk quota
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DiskQuota\" /v \"Enforce\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DiskQuota\" /v \"Enable\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DiskQuota\" /v \"LogEventOverLimit\" /t REG_DWORD /d 0 /f")
-    run("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DiskQuota\" /v \"LogEventOverThreshold\" /t REG_DWORD /d 0 /f")
-
-    # Optimize disk timeout
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\Disk\" /v \"TimeOutValue\" /t REG_DWORD /d \"200\" /f")
-
-    # Enable write cache for better performance
-    run("Reg.exe add \"%%k\\Device Parameters\\Disk\" /v UserWriteCacheSetting /t REG_DWORD /d 1 /f")
-    run("Reg.exe add \"%%k\\Device Parameters\\Disk\" /v CacheIsPowerProtected /t REG_DWORD /d 1 /f")
-
-    # Disable NTFS last access time stamps (improves SSD performance)
-    run("fsutil behavior set disablelastaccess 1")
-
-    # Disable 8.3 file name creation (improves performance)
-    run("fsutil behavior set disable8dot3 1")
-
-    # Disable memory compression
-    run("powershell -NoProfile -ExecutionPolicy Bypass -Command \"Disable-MMAgent -MemoryCompression\"")
-
-    # Disable paging executive
-    run("reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\" /v \"DisablePagingExecutive\" /t REG_DWORD /d 1 /f")
-
-    # Disable hibernation (saves disk space)
-    run("powercfg /h off")
-
-    # Disable system restore points creation
-    run("reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SystemRestore\" /v \"DisableSR\" /t REG_DWORD /d 1 /f")
-
-    # Optimize NTFS
-    run("fsutil behavior set mftzone 2")
+def restore_from_backup_data(backup_data):
+    if not backup_data:
+        return
